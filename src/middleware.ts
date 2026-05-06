@@ -2,7 +2,7 @@ import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
 
 // Rutas que requieren que el usuario esté logueado
 const isProtectedRoute = createRouteMatcher([
-  '/dashboard(.*)',
+  '/seller(.*)',
   '/admin(.*)'
 ]);
 
