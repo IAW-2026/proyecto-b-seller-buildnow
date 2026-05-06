@@ -1,5 +1,5 @@
 import prisma from '../../db/prisma';
-import { IProductRepository } from '../../../core/repositories/IProductRepository';
+import { IProductRepository, ProductWithCategory } from '../../../core/repositories/IProductRepository';
 import { Product } from '@prisma/client';
 
 export class PrismaProductRepository implements IProductRepository {
@@ -7,12 +7,50 @@ export class PrismaProductRepository implements IProductRepository {
     return prisma.product.findUnique({ where: { id } });
   }
 
-  async findByStore(storeId: string): Promise<Product[]> {
-    return prisma.product.findMany({ where: { storeId } });
+  async findByIdWithCategory(id: string): Promise<ProductWithCategory | null> {
+    const product = await prisma.product.findUnique({
+      where: { id },
+      include: { category: true },
+    });
+
+    if (!product) return null;
+
+    return {
+      ...product,
+      categoryName: product.category.name,
+    };
   }
 
-  async findByCategory(categoryId: string): Promise<Product[]> {
-    return prisma.product.findMany({ where: { categoryId } });
+  async findByStore(storeId: string): Promise<ProductWithCategory[]> {
+    const products = await prisma.product.findMany({
+      where: { storeId },
+      include: { category: true },
+    });
+
+    return products.map(p => ({ ...p, categoryName: p.category.name }));
+  }
+
+  async findByCategory(categoryId: string): Promise<ProductWithCategory[]> {
+    const products = await prisma.product.findMany({
+      where: { categoryId },
+      include: { category: true },
+    });
+
+    return products.map(p => ({ ...p, categoryName: p.category.name }));
+  }
+
+  async findAll(categoryId?: string): Promise<ProductWithCategory[]> {
+    const where = categoryId ? { categoryId } : {};
+    const products = await prisma.product.findMany({
+      where,
+      include: { category: true },
+    });
+
+    return products.map(p => ({ ...p, categoryName: p.category.name }));
+  }
+
+  async findManyByIds(ids: string[]): Promise<Product[]> {
+    return prisma.product.findMany({ where: { id: { in: ids } } });
   }
 
   async create(data: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>): Promise<Product> {
