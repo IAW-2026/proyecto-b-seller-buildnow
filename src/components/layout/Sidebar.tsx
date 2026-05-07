@@ -38,9 +38,14 @@ export function Sidebar() {
         </div>
         {routes.map((route) => {
           const Icon = route.icon;
-          const isActive = pathname === route.href || pathname.startsWith(`${route.href}/`);
+                    // Si la ruta base es exactamente el dashboard principal, exigimos coincidencia estricta.
+          // Para el resto (como products o orders), permitimos subrutas.
+          const isActive = 
+            route.href === '/seller/dashboard' 
+              ? pathname === route.href 
+              : pathname === route.href || pathname.startsWith(`${route.href}/`);
           
-          return (
+              return (
             <Link
               key={route.href}
               href={route.href}
@@ -63,15 +68,6 @@ export function Sidebar() {
         })}
       </nav>
       
-      <div className="p-4 border-t border-zinc-800/80 bg-zinc-950/50">
-        <div className="rounded-xl bg-zinc-900/80 p-4 border border-zinc-800">
-          <p className="text-xs text-zinc-400">¿Necesitas ayuda con tu local?</p>
-          <p className="text-sm font-medium text-white mt-1">Soporte BuildNow</p>
-          <button className="mt-4 w-full rounded-lg bg-zinc-800 px-3 py-2 text-sm font-medium text-white hover:bg-zinc-700 hover:text-white transition-all duration-200 border border-zinc-700 hover:border-zinc-600 shadow-sm">
-            Contactar
-          </button>
-        </div>
-      </div>
     </div>
   );
 }

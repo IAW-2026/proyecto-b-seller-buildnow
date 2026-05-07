@@ -1,0 +1,272 @@
+'use client';
+
+import { useState } from 'react';
+import { ProductWithCategory } from '@/core/repositories/IProductRepository';
+import { Category } from '@prisma/client';
+import { Plus, Edit2, Trash2 } from 'lucide-react';
+import { Modal } from '@/components/ui/Modal';
+import { createProductAction, updateProductAction, deleteProductAction } from '@/app/actions/product.actions';
+
+export type SerializedProduct = Omit<ProductWithCategory, 'price' | 'weight'> & {
+  price: number;
+  weight: number;
+};
+
+export function ProductsClient({
+  products,
+  categories,
+}: {
+  products: SerializedProduct[];
+  categories: Category[];
+}) {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<SerializedProduct | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const openCreateModal = () => {
+    setEditingProduct(null);
+    setError(null);
+    setIsModalOpen(true);
+  };
+
+  const openEditModal = (product: SerializedProduct) => {
+    setEditingProduct(product);
+    setError(null);
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setEditingProduct(null);
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('¿Estás seguro de que deseas eliminar este producto?')) return;
+    try {
+      await deleteProductAction(id);
+    } catch (err: any) {
+      alert(err.message || 'Error al eliminar el producto');
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError(null);
+    const formData = new FormData(e.currentTarget);
+
+    try {
+      if (editingProduct) {
+        await updateProductAction(editingProduct.id, formData);
+      } else {
+        await createProductAction(formData);
+      }
+      closeModal();
+    } catch (err: any) {
+      setError(err.message || 'Error al guardar el producto');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-white">Mis Productos</h1>
+          <p className="text-zinc-400 text-sm mt-1">
+            Gestiona el inventario de tu corralón
+          </p>
+        </div>
+        <button
+          onClick={openCreateModal}
+          className="flex items-center gap-2 bg-orange-600 hover:bg-orange-500 text-white px-4 py-2 rounded-lg font-medium transition-colors cursor-pointer"
+        >
+          <Plus className="w-4 h-4" />
+          Nuevo Producto
+        </button>
+      </div>
+
+      <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-zinc-300">
+            <thead className="bg-zinc-950/50 border-b border-zinc-800 text-sm uppercase">
+              <tr>
+                <th className="px-6 py-4 font-medium">Nombre</th>
+                <th className="px-6 py-4 font-medium">Categoría</th>
+                <th className="px-6 py-4 font-medium">Precio</th>
+                <th className="px-6 py-4 font-medium">Stock</th>
+                <th className="px-6 py-4 font-medium">Estado</th>
+                <th className="px-6 py-4 font-medium text-right">Acciones</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-zinc-800">
+              {products.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="px-6 py-8 text-center text-zinc-500">
+                    No tienes productos registrados.
+                  </td>
+                </tr>
+              ) : null}
+              
+              {products.map((product) => (
+                <tr key={product.id} className="hover:bg-zinc-800/30 transition-colors">
+                  <td className="px-6 py-4">
+                    <div className="font-medium text-white">{product.name}</div>
+                    <div className="text-xs text-zinc-500">{Number(product.weight)} kg</div>
+                  </td>
+                  <td className="px-6 py-4">{product.categoryName}</td>
+                  <td className="px-6 py-4 font-medium text-orange-500">
+                    ${Number(product.price).toLocaleString()}
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${product.stock <= 5 ? 'bg-red-500/10 text-red-500' : 'bg-zinc-800 text-zinc-300'}`}>
+                      {product.stock} un.
+                    </span>
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${product.available ? 'bg-green-500/10 text-green-500' : 'bg-zinc-800 text-zinc-500'}`}>
+                      {product.available ? 'Activo' : 'Inactivo'}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    <div className="flex items-center justify-end gap-2">
+                      <button
+                        onClick={() => openEditModal(product)}
+                        className="p-2 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors"
+                        title="Editar"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(product.id)}
+                        className="p-2 text-zinc-400 hover:text-red-500 hover:bg-zinc-800 rounded-lg transition-colors cursor-pointer"
+                        title="Eliminar"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <Modal
+        isOpen={isModalOpen}
+        onClose={closeModal}
+        title={editingProduct ? 'Editar Producto' : 'Nuevo Producto'}
+      >
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-zinc-300 mb-1">Nombre del producto</label>
+            <input
+              type="text"
+              name="name"
+              required
+              defaultValue={editingProduct?.name}
+              className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-orange-500 transition-colors"
+              placeholder="Ej: Cemento Loma Negra 50kg"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-zinc-300 mb-1">Categoría</label>
+            <select
+              name="categoryId"
+              required
+              defaultValue={editingProduct?.categoryId}
+              className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-orange-500 transition-colors appearance-none"
+            >
+              <option value="" disabled>Selecciona una categoría</option>
+              {categories.map(c => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-zinc-300 mb-1">Precio ($)</label>
+              <input
+                type="number"
+                name="price"
+                step="0.01"
+                min="0"
+                required
+                defaultValue={editingProduct ? Number(editingProduct.price) : ''}
+                className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-orange-500 transition-colors"
+                placeholder="0.00"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-zinc-300 mb-1">Stock</label>
+              <input
+                type="number"
+                name="stock"
+                min="0"
+                required
+                defaultValue={editingProduct ? editingProduct.stock : ''}
+                className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-orange-500 transition-colors"
+                placeholder="0"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-zinc-300 mb-1">Peso (kg)</label>
+            <input
+              type="number"
+              name="weight"
+              step="0.01"
+              min="0"
+              required
+              defaultValue={editingProduct ? Number(editingProduct.weight) : ''}
+              className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-orange-500 transition-colors"
+              placeholder="0.00"
+            />
+          </div>
+
+          <div className="flex items-center gap-3 pt-2">
+            <input
+              type="checkbox"
+              name="available"
+              id="available"
+              defaultChecked={editingProduct ? editingProduct.available : true}
+              className="w-4 h-4 accent-orange-500 bg-zinc-950 border-zinc-800 rounded"
+            />
+            <label htmlFor="available" className="text-sm font-medium text-zinc-300 cursor-pointer">
+              Producto activo (visible en catálogo)
+            </label>
+          </div>
+
+          {error && (
+            <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
+              {error}
+            </div>
+          )}
+
+          <div className="pt-4 mt-6 border-t border-zinc-800 flex justify-end gap-3">
+            <button
+              type="button"
+              onClick={closeModal}
+              className="px-4 py-2 text-sm font-medium text-zinc-400 hover:text-white transition-colors cursor-pointer"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="px-4 py-2 bg-orange-600 hover:bg-orange-500 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+            >
+              {isLoading ? 'Guardando...' : 'Guardar Producto'}
+            </button>
+          </div>
+        </form>
+      </Modal>
+    </div>
+  );
+}

@@ -54,11 +54,23 @@ export class PrismaProductRepository implements IProductRepository {
   }
 
   async create(data: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>): Promise<Product> {
-    return prisma.product.create({ data });
+    const payload = { ...data };
+    
+    if (payload.stock <= 0) {
+      payload.available = false;
+    }
+
+    return prisma.product.create({ data: payload });
   }
 
   async update(id: string, data: Partial<Product>): Promise<Product> {
-    return prisma.product.update({ where: { id }, data });
+    const payload = { ...data };
+    
+    if (payload.stock !== undefined && payload.stock <= 0) {
+      payload.available = false;
+    }
+
+    return prisma.product.update({ where: { id }, data: payload });
   }
 
   async delete(id: string): Promise<void> {
