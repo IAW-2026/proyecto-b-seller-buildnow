@@ -49,14 +49,13 @@ async function manejarCreacionOEdicion(data: WebhookEvent['data'] & {
   const name = `${first_name || ''} ${last_name || ''}`.trim() || 'Vendedor';
   const incomingRole = public_metadata?.role as string | undefined;
 
-  // BLINDAJE: Si el rol no es seller ni admin, lo ignoramos y le decimos a Clerk que todo OK (200)
+
   if (incomingRole !== 'seller' && incomingRole !== 'admin') {
     console.log(`Webhook ignorado: El usuario ${id} tiene rol '${incomingRole}' (no pertenece a esta app)`);
     return new Response('Usuario ignorado: No es seller ni admin', { status: 200 });
   }
 
-  // Mapeamos el rol para la base de datos de Prisma (asumiendo que Prisma espera 'ADMIN' o 'BASIC')
-  const role = incomingRole === 'admin' ? 'ADMIN' : 'BASIC';
+  const role = incomingRole === 'admin' ? 'ADMIN' : 'SELLER';
 
   if (!email) {
     return new Response('No se encontró email', { status: 400 });

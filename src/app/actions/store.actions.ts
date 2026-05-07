@@ -2,6 +2,7 @@
 
 import { auth } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
+import { revalidatePath } from 'next/cache';
 import { PrismaStoreRepository } from '../../infrastructure/repositories/prisma/PrismaStoreRepository';
 import { PrismaSellerRepository } from '../../infrastructure/repositories/prisma/PrismaSellerRepository';
 import { StoreStatus } from '@prisma/client';
@@ -33,7 +34,6 @@ export async function createStoreAction(formData: FormData) {
     redirect('/seller/dashboard');
   }
 
-  // Crear la tienda
   const newStore = await storeRepo.create({
     name,
     description: description || null,
@@ -41,9 +41,7 @@ export async function createStoreAction(formData: FormData) {
     status: StoreStatus.OPEN,
   });
 
-  // Actualizar al vendedor con el ID de la nueva tienda
   await sellerRepo.update(userId, { storeId: newStore.id });
 
-  // Redirigir al dashboard
   redirect('/seller/dashboard');
 }

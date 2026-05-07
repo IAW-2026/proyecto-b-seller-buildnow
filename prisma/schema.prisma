@@ -14,7 +14,7 @@ enum StoreStatus {
 
 enum Role {
   ADMIN
-  BASIC
+  SELLER
 }
 
 enum OrderStatus {
@@ -45,7 +45,7 @@ model Seller {
   id        String   @id // Viene desde Clerk (userId)
   name      String
   email     String   @unique
-  role      Role     @default(BASIC)
+  role      Role     @default(SELLER)
   
   storeId   String?
   store     Store?   @relation(fields: [storeId], references: [id])
