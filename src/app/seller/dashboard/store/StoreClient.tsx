@@ -104,7 +104,7 @@ export function StoreClient({ store }: { store: Store }) {
               className="w-full sm:w-1/2 bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-orange-500 transition-colors appearance-none"
             >
               <option value={StoreStatus.OPEN}>Abierta (Recibir pedidos)</option>
-              <option value={StoreStatus.CLOSED}>Cerrada (Pausar atención)</option>
+              <option value={StoreStatus.CLOSE}>Cerrada (Pausar atención)</option>
             </select>
           </div>
 

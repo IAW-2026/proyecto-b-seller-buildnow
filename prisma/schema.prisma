@@ -9,7 +9,7 @@ datasource db {
 
 enum StoreStatus {
   OPEN
-  CLOSED
+  CLOSE
 }
 
 enum Role {
@@ -31,7 +31,7 @@ model Store {
   name        String
   description String?
   address     String
-  status      StoreStatus @default(CLOSED)
+  status      StoreStatus @default(CLOSE)
   
   sellers     Seller[]
   products    Product[]
