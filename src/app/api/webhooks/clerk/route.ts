@@ -43,6 +43,8 @@ async function manejarCreacionOEdicion(data: WebhookEvent['data'] & {
   last_name: string | null;
   public_metadata: Record<string, unknown>;
 }): Promise<Response> {
+
+  console.log(data);
   const { id, email_addresses, first_name, last_name, public_metadata } = data;
 
   const email = email_addresses[0]?.email_address;

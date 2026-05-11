@@ -14,7 +14,6 @@ export default function SignUpPage() {
         </div>
         
         <div className="flex justify-center">
-          {/* El secreto está acá: forceRedirectUrl obliga a pasar por nuestra ruta puente */}
           <SignUp 
             forceRedirectUrl="/api/assign-role"
             appearance={{

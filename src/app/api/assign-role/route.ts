@@ -1,7 +1,6 @@
 import { auth, clerkClient } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
 import { APP_ROLES } from '@/core/auth/roles';
-
 import { PrismaSellerRepository } from '@/infrastructure/repositories/prisma/PrismaSellerRepository';
 
 export async function GET() {
@@ -18,17 +17,12 @@ export async function GET() {
     publicMetadata: { role: APP_ROLES.SELLER }
   });
 
+  const sellerRepo = new PrismaSellerRepository();
+  const existingSeller = await sellerRepo.findById(userId);
 
 
-  // HACK LOCAL: Como los webhooks no llegan a localhost sin Ngrok, 
-  // aseguramos que el usuario exista en Prisma manualmente acá.
 
-  if (process.env.DEVELOPMENT) {
-    const sellerRepo = new PrismaSellerRepository();
-    const existingSeller = await sellerRepo.findById(userId);
-
-
-    if (!existingSeller) {
+  if (!existingSeller) {
       const email = clerkUser.emailAddresses[0]?.emailAddress || 'sin_email';
       const name = `${clerkUser.firstName || ''} ${clerkUser.lastName || ''}`.trim() || 'Vendedor';
 
@@ -40,9 +34,11 @@ export async function GET() {
         storeId: null
       });
 
-    }
   }
-
-
-  redirect('/seller/dashboard');
+  
+  if (!existingSeller || !existingSeller.storeId) {
+    redirect('/seller/onboarding');
+  } else {
+    redirect('/seller/dashboard');
+  }
 }

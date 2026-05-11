@@ -1,0 +1,2 @@
+El sign-out no anda bien 
+Si te registras 2 veces con el mismo mail se rompe todo
