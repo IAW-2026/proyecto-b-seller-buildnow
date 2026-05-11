@@ -1,4 +1,5 @@
-import { UserButton } from "@clerk/nextjs";
+
+import { UserButtonClient } from "../UserButtonClient";
 import { Bell, Search } from "lucide-react";
 
 export function Topbar() {
@@ -38,13 +39,7 @@ export function Topbar() {
             <span className="text-sm font-medium text-zinc-900">Mi Corralón</span>
             <span className="text-xs text-zinc-500">Vendedor</span>
           </div>
-          <UserButton 
-            appearance={{
-              elements: {
-                avatarBox: "h-9 w-9 ring-2 ring-orange-100 transition-all hover:ring-orange-300 shadow-sm",
-              }
-            }}
-          />
+          <UserButtonClient />  
         </div>
       </div>
     </header>

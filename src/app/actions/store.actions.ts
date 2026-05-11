@@ -4,9 +4,10 @@ import { auth } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { requireRole } from '@/core/auth/auth';
+import { getSellerContext } from '@/core/auth/getSellerContext';
 import { APP_ROLES } from '@/core/auth/roles';
-import { PrismaStoreRepository } from '../../infrastructure/repositories/prisma/PrismaStoreRepository';
-import { PrismaSellerRepository } from '../../infrastructure/repositories/prisma/PrismaSellerRepository';
+import { PrismaStoreRepository } from '@/infrastructure/repositories/prisma/PrismaStoreRepository';
+import { PrismaSellerRepository } from '@/infrastructure/repositories/prisma/PrismaSellerRepository';
 import { StoreStatus } from '@prisma/client';
 
 export async function createStoreAction(formData: FormData) {
@@ -50,10 +51,10 @@ export async function createStoreAction(formData: FormData) {
 
 export async function updateStoreAction(storeId: string, formData: FormData) {
   await requireRole([APP_ROLES.SELLER]);
-  const { userId } = await auth();
+  const { seller } = await getSellerContext();
 
-  if (!userId) {
-    throw new Error('No autorizado');
+  if (seller.storeId !== storeId) {
+    throw new Error('No tenés permisos para editar esta tienda');
   }
 
   const name = formData.get('name') as string;
@@ -62,17 +63,10 @@ export async function updateStoreAction(storeId: string, formData: FormData) {
   const status = formData.get('status') as StoreStatus;
 
   if (!name || !address || !status) {
-    throw new Error('El nombre, direccin y estado son obligatorios');
+    throw new Error('El nombre, dirección y estado son obligatorios');
   }
 
   const storeRepo = new PrismaStoreRepository();
-  const sellerRepo = new PrismaSellerRepository();
-
-  const seller = await sellerRepo.findById(userId);
-  if (!seller || seller.storeId !== storeId) {
-    throw new Error('No tienes permisos para editar esta tienda');
-  }
-
   await storeRepo.update(storeId, {
     name,
     description: description || null,
@@ -82,4 +76,3 @@ export async function updateStoreAction(storeId: string, formData: FormData) {
 
   revalidatePath('/seller/dashboard/store');
 }
-

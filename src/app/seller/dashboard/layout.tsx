@@ -12,18 +12,7 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { userId } = await auth();
 
-  if (!userId) {
-    redirect("/sign-in");
-  }
-
-  const sellerRepo = new PrismaSellerRepository();
-  const seller = await sellerRepo.findById(userId);
-
-  if (!seller || !seller.storeId) {
-    redirect("/seller/onboarding");
-  }
 
   return (
     <div className="flex h-screen overflow-hidden bg-zinc-50 font-sans selection:bg-orange-500/30">

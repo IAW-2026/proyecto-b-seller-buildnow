@@ -13,6 +13,26 @@ export type CreateOrderInput = {
   }[];
 };
 
+export type OrderItemDetail = {
+  id: string;
+  productId: string;
+  productName: string;
+  quantity: number;
+  price: number;
+};
+
+export type SellerOrderView = {
+  id: string;
+  buyerId: string;
+  status: OrderStatus;
+  totalAmount: number;
+  totalWeight: number;
+  deliveryAddress: string;
+  items: OrderItemDetail[];
+  createdAt: string;
+  updatedAt: string;
+};
+
 export type ReadyOrderView = {
   id: string;
   storeName: string;
@@ -25,7 +45,7 @@ export type ReadyOrderView = {
 
 export interface IOrderRepository {
   findById(id: string): Promise<Order | null>;
-  findByStore(storeId: string): Promise<Order[]>;
+  findByStore(storeId: string): Promise<SellerOrderView[]>;
   findReadyOrders(): Promise<ReadyOrderView[]>;
   createWithItems(data: CreateOrderInput): Promise<Order>;
   updateStatus(id: string, status: OrderStatus): Promise<Order>;

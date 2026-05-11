@@ -1,5 +1,5 @@
 import prisma from '../../db/prisma';
-import { IOrderRepository, CreateOrderInput, ReadyOrderView } from '../../../core/repositories/IOrderRepository';
+import { IOrderRepository, CreateOrderInput, ReadyOrderView, SellerOrderView } from '../../../core/repositories/IOrderRepository';
 import { Order, OrderStatus } from '@prisma/client';
 
 export class PrismaOrderRepository implements IOrderRepository {
@@ -10,12 +10,34 @@ export class PrismaOrderRepository implements IOrderRepository {
     });
   }
 
-  async findByStore(storeId: string): Promise<Order[]> {
-    return prisma.order.findMany({
+  async findByStore(storeId: string): Promise<SellerOrderView[]> {
+    const orders = await prisma.order.findMany({
       where: { storeId },
-      include: { items: true },
+      include: {
+        items: {
+          include: { product: true },
+        },
+      },
       orderBy: { createdAt: 'desc' },
     });
+
+    return orders.map(order => ({
+      id: order.id,
+      buyerId: order.buyerId,
+      status: order.status,
+      totalAmount: Number(order.totalAmount),
+      totalWeight: Number(order.totalWeight),
+      deliveryAddress: order.deliveryAddress,
+      items: order.items.map(item => ({
+        id: item.id,
+        productId: item.productId,
+        productName: item.product.name,
+        quantity: item.quantity,
+        price: Number(item.price),
+      })),
+      createdAt: order.createdAt.toISOString(),
+      updatedAt: order.updatedAt.toISOString(),
+    }));
   }
 
   async findReadyOrders(): Promise<ReadyOrderView[]> {
