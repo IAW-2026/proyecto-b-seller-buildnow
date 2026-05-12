@@ -1,16 +1,18 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { createCategoryAction, deleteCategoryAction } from '@/app/actions/category.actions';
-import { Trash2, Loader2, PlusCircle } from 'lucide-react';
+import { createCategoryAction, deleteCategoryAction, updateCategoryAction } from '@/app/actions/category.actions';
+import { Trash2, Loader2, PlusCircle, Edit2, X, Check } from 'lucide-react';
 
 export function CategoryCreateForm() {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const [showSuccess, setShowSuccess] = useState(false);
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(null);
+    setShowSuccess(false);
     const formData = new FormData(e.currentTarget);
     const form = e.currentTarget;
 
@@ -18,6 +20,8 @@ export function CategoryCreateForm() {
       try {
         await createCategoryAction(formData);
         form.reset();
+        setShowSuccess(true);
+        setTimeout(() => setShowSuccess(false), 1500); // Se muestra por 1.5 segundos
       } catch (err: any) {
         setError(err.message);
       }
@@ -26,7 +30,7 @@ export function CategoryCreateForm() {
 
   return (
     <form onSubmit={handleSubmit} className="bg-white p-6 rounded-xl border border-zinc-200 shadow-sm flex flex-col sm:flex-row gap-4 items-start sm:items-end">
-      <div className="flex-1 w-full">
+      <div className="flex-1 w-full relative">
         <label htmlFor="name" className="block text-sm font-medium text-zinc-700 mb-1">Nombre de la Categoría</label>
         <input 
           type="text" 
@@ -35,9 +39,14 @@ export function CategoryCreateForm() {
           placeholder="Ej: Materiales Gruesos" 
           required
           disabled={isPending}
-          className="block w-full rounded-md border-0 py-2 text-zinc-900 shadow-sm ring-1 ring-inset ring-zinc-300 placeholder:text-zinc-400 focus:ring-2 focus:ring-inset focus:ring-orange-600 sm:text-sm sm:leading-6"
+          onChange={() => { 
+            if (error) setError(null);
+            if (showSuccess) setShowSuccess(false);
+          }}
+          className="block w-full rounded-md border-0 px-3 py-2 pl-4 text-zinc-900 shadow-sm ring-1 ring-inset ring-zinc-300 placeholder:text-zinc-400 focus:ring-2 focus:ring-inset focus:ring-orange-600 sm:text-sm sm:leading-6"
         />
-        {error && <p className="text-red-500 text-xs mt-2">{error}</p>}
+        {error && <p className="text-red-500 text-xs mt-2 absolute">{error}</p>}
+        {showSuccess && <p className="text-emerald-600 text-xs mt-2 font-medium flex items-center gap-1 absolute"><Check size={14} /> ¡Categoría creada con éxito!</p>}
       </div>
       <button 
         type="submit" 
@@ -75,5 +84,80 @@ export function CategoryDeleteButton({ id }: { id: string }) {
     >
       {isPending ? <Loader2 size={18} className="animate-spin" /> : <Trash2 size={18} />}
     </button>
+  );
+}
+
+export function CategoryTableRow({ category }: { category: { id: string, name: string, createdAt: Date } }) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [isPending, startTransition] = useTransition();
+
+  const handleUpdate = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    
+    startTransition(async () => {
+      try {
+        await updateCategoryAction(category.id, formData);
+        setIsEditing(false);
+      } catch (err: any) {
+        alert(err.message);
+      }
+    });
+  };
+
+  if (isEditing) {
+    return (
+      <tr className="bg-zinc-50 border-y border-orange-200">
+        <td colSpan={3} className="px-6 py-3">
+          <form onSubmit={handleUpdate} className="flex items-center gap-3 w-full">
+            <input 
+              type="text" 
+              name="name" 
+              defaultValue={category.name} 
+              autoFocus
+              disabled={isPending}
+              className="block flex-1 rounded-md border-0 px-3 py-2 text-zinc-900 shadow-sm ring-1 ring-inset ring-orange-300 focus:ring-2 focus:ring-inset focus:ring-orange-600 sm:text-sm"
+              required 
+            />
+            <button 
+              type="submit" 
+              disabled={isPending}
+              className="inline-flex items-center justify-center rounded-md p-2 bg-zinc-900 text-white hover:bg-zinc-800 transition-colors disabled:opacity-50"
+              title="Guardar"
+            >
+              {isPending ? <Loader2 size={18} className="animate-spin" /> : <Check size={18} />}
+            </button>
+            <button 
+              type="button" 
+              onClick={() => setIsEditing(false)}
+              disabled={isPending}
+              className="inline-flex items-center justify-center rounded-md p-2 bg-zinc-100 text-zinc-600 hover:bg-zinc-200 transition-colors disabled:opacity-50"
+              title="Cancelar"
+            >
+              <X size={18} />
+            </button>
+          </form>
+        </td>
+      </tr>
+    );
+  }
+
+  return (
+    <tr className="hover:bg-zinc-50 transition-colors">
+      <td className="px-6 py-4 font-medium text-zinc-900">{category.name}</td>
+      <td className="px-6 py-4 text-sm text-zinc-500">
+        {new Date(category.createdAt).toLocaleDateString('es-AR')}
+      </td>
+      <td className="px-6 py-4 flex flex-row items-center justify-end gap-1">
+        <button
+          onClick={() => setIsEditing(true)}
+          className="inline-flex items-center justify-center rounded-md p-2 text-blue-600 hover:bg-blue-50 hover:text-blue-700 transition-colors"
+          title="Editar categoría"
+        >
+          <Edit2 size={18} />
+        </button>
+        <CategoryDeleteButton id={category.id} />
+      </td>
+    </tr>
   );
 }

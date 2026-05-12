@@ -11,12 +11,12 @@ export default async function SellerZoneLayout({ children }: { children: React.R
   }
 
   const role = sessionClaims?.metadata?.role as string | undefined;
-  console.log(sessionClaims, userId);
+  
   if (role === APP_ROLES.ADMIN) {
     redirect("/admin/dashboard");
   }
 
-  // 2. Si es un Buyer (Comprador) o Delivery (Repartidor), le bloqueamos el acceso
+  
   if (role === APP_ROLES.BUYER || role === APP_ROLES.DELIVERY) {
     return (
       <div className="flex h-screen flex-col items-center justify-center bg-zinc-950 text-white font-sans selection:bg-orange-500/30">
@@ -31,6 +31,6 @@ export default async function SellerZoneLayout({ children }: { children: React.R
     );
   }
 
-  // 3. Si es un Vendedor (rol BASIC, SELLER o indefinido inicial), lo dejamos pasar
+  
   return <>{children}</>;
 }

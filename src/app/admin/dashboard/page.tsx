@@ -15,13 +15,10 @@ export default async function AdminDashboardPage() {
 
   const [stores, orders, products] = await Promise.all([
     storeRepo.findAll(),
-    // @ts-ignore - Si findAll no existe en orderRepo, debemos buscar una forma o agregarlo
-    orderRepo.findMany ? orderRepo.findMany() : [], 
-    // @ts-ignore
-    productRepo.findMany ? productRepo.findMany() : []
+    orderRepo.findAll(), 
+    productRepo.findAll()
   ]);
 
-  // Si no existen los metodos, asumiremos 0 momentaneamente, pero arreglaré los repos después
   const totalStores = stores.length;
   const activeStores = stores.filter((s: { status: StoreStatus }) => s.status === StoreStatus.OPEN || s.status === StoreStatus.CLOSE).length;
   const suspendedStores = stores.filter((s: { status: StoreStatus }) => s.status === StoreStatus.SUSPENDED).length;
@@ -41,15 +38,15 @@ export default async function AdminDashboardPage() {
           icon={<Store className="text-blue-500" size={24} />}
         />
         <MetricCard
-          title="Órdenes (Demo)"
-          value="-"
-          subtitle="Total histórico"
+          title="Órdenes (Global)"
+          value={String(orders.length)}
+          subtitle="Total histórico procesado"
           icon={<ShoppingCart className="text-orange-500" size={24} />}
         />
         <MetricCard
-          title="Productos (Demo)"
-          value="-"
-          subtitle="En la plataforma"
+          title="Productos (Global)"
+          value={String(products.length)}
+          subtitle="En la plataforma global"
           icon={<Package className="text-emerald-500" size={24} />}
         />
       </div>

@@ -49,4 +49,5 @@ export interface IOrderRepository {
   findReadyOrders(): Promise<ReadyOrderView[]>;
   createWithItems(data: CreateOrderInput): Promise<Order>;
   updateStatus(id: string, status: OrderStatus): Promise<Order>;
+
 }

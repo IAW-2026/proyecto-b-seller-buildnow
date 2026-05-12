@@ -92,7 +92,7 @@ export default async function AdminStoreDetailPage({
       <div>
         <h3 className="text-lg font-semibold text-zinc-900 mb-4 flex items-center gap-2">
           <Package size={20} className="text-zinc-500" /> 
-          Catálogo Activo (Visor de Admin)
+          Catálogo Activo
         </h3>
         
         <div className="rounded-xl border border-zinc-200 bg-white shadow-sm overflow-hidden">

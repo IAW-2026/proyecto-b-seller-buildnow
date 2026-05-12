@@ -15,7 +15,7 @@ export default function SignUpPage() {
         
         <div className="flex justify-center">
           <SignUp 
-            forceRedirectUrl="/api/assign-role"
+            forceRedirectUrl="/redirect"
             appearance={{
               elements: {
                 rootBox: "mx-auto w-full",

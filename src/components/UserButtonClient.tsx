@@ -1,6 +1,8 @@
 
 "use client";
-import { UserButton } from "@clerk/nextjs";
+import dynamic from "next/dynamic";
+
+const UserButton = dynamic(() => import("@clerk/nextjs").then(mod => mod.UserButton), { ssr: false });
 
 export function UserButtonClient() {
  return (
@@ -13,17 +15,3 @@ export function UserButtonClient() {
     />
   );
 } 
-/*
-  'use client'
-
-import { useClerk } from '@clerk/nextjs'
-
-export const UserButtonClient = () => {
-  const { signOut } = useClerk()
-
-  return (
-    // Clicking this button signs out a user
-    // and redirects them to the home page "/".
-    <button onClick={() => signOut({ redirectUrl: '/sign-in' })}>Sign out</button>
-  )
-}*/

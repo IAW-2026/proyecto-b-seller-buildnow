@@ -20,8 +20,6 @@ export async function GET() {
   const sellerRepo = new PrismaSellerRepository();
   const existingSeller = await sellerRepo.findById(userId);
 
-
-
   if (!existingSeller) {
       const email = clerkUser.emailAddresses[0]?.emailAddress || 'sin_email';
       const name = `${clerkUser.firstName || ''} ${clerkUser.lastName || ''}`.trim() || 'Vendedor';

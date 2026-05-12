@@ -6,10 +6,10 @@ import { PrismaSellerRepository } from '../../../../infrastructure/repositories/
 const sellerRepo = new PrismaSellerRepository();
 
 async function verificarFirmaClerk(req: Request): Promise<WebhookEvent | Response> {
-  const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET;
+  const WEBHOOK_SECRET = process.env.CLERK_WEBHOOK_SECRET;
 
   if (!WEBHOOK_SECRET) {
-    throw new Error('Please add WEBHOOK_SECRET from Clerk Dashboard to .env');
+    throw new Error('Please add CLERK_WEBHOOK_SECRET from Clerk Dashboard to .env');
   }
 
   const headerPayload = await headers();
@@ -44,7 +44,6 @@ async function manejarCreacionOEdicion(data: WebhookEvent['data'] & {
   public_metadata: Record<string, unknown>;
 }): Promise<Response> {
 
-  console.log(data);
   const { id, email_addresses, first_name, last_name, public_metadata } = data;
 
   const email = email_addresses[0]?.email_address;

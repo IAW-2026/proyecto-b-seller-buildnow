@@ -43,3 +43,26 @@ export async function deleteCategoryAction(id: string) {
 
   revalidatePath('/admin/dashboard/categories');
 }
+
+export async function updateCategoryAction(id: string, formData: FormData) {
+  await requireRole([APP_ROLES.ADMIN]);
+
+  const name = formData.get('name') as string;
+
+  if (!name || name.trim() === '') {
+    throw new Error('El nombre de la categoría no puede estar vacío');
+  }
+
+  const categoryRepo = new PrismaCategoryRepository();
+  
+  try {
+    await categoryRepo.update(id, { name: name.trim() });
+  } catch (error: any) {
+    if (error.code === 'P2002') {
+      throw new Error('Ya existe una categoría con ese nombre');
+    }
+    throw new Error('Error al actualizar la categoría');
+  }
+
+  revalidatePath('/admin/dashboard/categories');
+}

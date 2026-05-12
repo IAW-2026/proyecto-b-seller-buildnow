@@ -1,7 +1,7 @@
 import { requireRole } from '@/core/auth/auth';
 import { APP_ROLES } from '@/core/auth/roles';
 import { PrismaCategoryRepository } from '@/infrastructure/repositories/prisma/PrismaCategoryRepository';
-import { CategoryCreateForm, CategoryDeleteButton } from './CategoryClient';
+import { CategoryCreateForm, CategoryTableRow } from './CategoryClient';
 import { Tags } from 'lucide-react';
 
 export default async function AdminCategoriesPage() {
@@ -42,15 +42,7 @@ export default async function AdminCategoriesPage() {
             </thead>
             <tbody className="divide-y divide-zinc-100">
               {categories.map((category) => (
-                <tr key={category.id} className="hover:bg-zinc-50 transition-colors">
-                  <td className="px-6 py-4 font-medium text-zinc-900">{category.name}</td>
-                  <td className="px-6 py-4 text-sm text-zinc-500">
-                    {new Date(category.createdAt).toLocaleDateString('es-AR')}
-                  </td>
-                  <td className="px-6 py-4 flex justify-end">
-                    <CategoryDeleteButton id={category.id} />
-                  </td>
-                </tr>
+                <CategoryTableRow key={category.id} category={category} />
               ))}
             </tbody>
           </table>

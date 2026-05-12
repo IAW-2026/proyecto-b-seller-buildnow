@@ -15,7 +15,7 @@ export default function SignInPage() {
         
         <div className="flex justify-center">
           <SignIn 
-            forceRedirectUrl="/seller/dashboard"
+            forceRedirectUrl="/redirect"
             appearance={{
               elements: {
                 rootBox: "mx-auto w-full",

@@ -15,10 +15,6 @@ export default async function DashboardLayout({
 
 
   const { sessionClaims } = await auth();
-  const role = sessionClaims?.metadata?.role;
-  if (role === 'admin') {
-    redirect('/admin/dashboard');
-  }
 
   return (
     <div className="flex h-screen overflow-hidden bg-zinc-50 font-sans selection:bg-orange-500/30">

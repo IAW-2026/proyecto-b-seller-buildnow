@@ -46,10 +46,9 @@ export function Sidebar({ role = 'SELLER' }: { role?: 'ADMIN' | 'SELLER' }) {
         </div>
         {routes.map((route) => {
           const Icon = route.icon;
-                    // Si la ruta base es exactamente el dashboard principal, exigimos coincidencia estricta.
-          // Para el resto (como products o orders), permitimos subrutas.
-          const isActive = 
-            route.href === '/seller/dashboard' 
+            
+            const isActive = 
+            route.href === '/seller/dashboard' || route.href === '/admin/dashboard'
               ? pathname === route.href 
               : pathname === route.href || pathname.startsWith(`${route.href}/`);
           
