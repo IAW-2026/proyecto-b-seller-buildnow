@@ -1,28 +1,22 @@
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Topbar } from "@/components/layout/Topbar";
-import { auth } from "@clerk/nextjs/server";
-import { redirect } from "next/navigation";
-import { PrismaSellerRepository } from "@/infrastructure/repositories/prisma/PrismaSellerRepository";
+import { requireRole } from "@/core/auth/auth";
+import { APP_ROLES } from "@/core/auth/roles";
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-export default async function DashboardLayout({
+export default async function AdminDashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-
-
-  const { sessionClaims } = await auth();
-  const role = sessionClaims?.metadata?.role;
-  if (role === 'admin') {
-    redirect('/admin/dashboard');
-  }
+  // Solo los admin pueden ver esta sección
+  await requireRole([APP_ROLES.ADMIN]);
 
   return (
     <div className="flex h-screen overflow-hidden bg-zinc-50 font-sans selection:bg-orange-500/30">
-      <Sidebar />
+      <Sidebar role="ADMIN" />
 
       <div className="flex flex-1 flex-col overflow-hidden relative">
         <Topbar />

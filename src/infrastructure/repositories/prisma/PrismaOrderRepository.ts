@@ -3,6 +3,15 @@ import { IOrderRepository, CreateOrderInput, ReadyOrderView, SellerOrderView } f
 import { Order, OrderStatus } from '@prisma/client';
 
 export class PrismaOrderRepository implements IOrderRepository {
+  async findAll(): Promise<Order[]> {
+    return prisma.order.findMany({
+      orderBy: { createdAt: 'desc' },
+      include: {
+        store: true,
+      }
+    });
+  }
+
   async findById(id: string): Promise<Order | null> {
     return prisma.order.findUnique({
       where: { id },

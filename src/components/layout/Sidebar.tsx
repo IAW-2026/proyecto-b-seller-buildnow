@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Package, ShoppingCart, Settings, Store } from 'lucide-react';
+import { LayoutDashboard, Package, ShoppingCart, Settings, Store, Tags } from 'lucide-react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -10,7 +10,7 @@ function cn(...inputs: (string | undefined | null | false)[]) {
   return twMerge(clsx(inputs));
 }
 
-const routes = [
+const sellerRoutes = [
   { href: '/seller/dashboard', label: 'Resumen', icon: LayoutDashboard },
   { href: '/seller/dashboard/orders', label: 'Órdenes', icon: ShoppingCart },
   { href: '/seller/dashboard/products', label: 'Productos', icon: Package },
@@ -18,8 +18,16 @@ const routes = [
   { href: '/seller/dashboard/settings', label: 'Configuración', icon: Settings },
 ];
 
-export function Sidebar() {
+const adminRoutes = [
+  { href: '/admin/dashboard', label: 'General', icon: LayoutDashboard },
+  { href: '/admin/dashboard/stores', label: 'Corralones', icon: Store },
+  { href: '/admin/dashboard/orders', label: 'Órdenes Globales', icon: ShoppingCart },
+  { href: '/admin/dashboard/categories', label: 'Categorías', icon: Tags },
+];
+
+export function Sidebar({ role = 'SELLER' }: { role?: 'ADMIN' | 'SELLER' }) {
   const pathname = usePathname();
+  const routes = role === 'ADMIN' ? adminRoutes : sellerRoutes;
 
   return (
     <div className="flex h-full w-64 flex-col bg-zinc-950 text-zinc-300 border-r border-zinc-800 shadow-2xl">

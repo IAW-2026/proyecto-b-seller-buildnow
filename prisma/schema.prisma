@@ -10,6 +10,7 @@ datasource db {
 enum StoreStatus {
   OPEN
   CLOSE
+  SUSPENDED
 }
 
 enum Role {

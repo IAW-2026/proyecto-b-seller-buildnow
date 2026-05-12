@@ -10,13 +10,10 @@ export default async function SellerZoneLayout({ children }: { children: React.R
     redirect("/sign-in");
   }
 
-  // Obtenemos el rol desde los metadatos de Clerk
-  // Por defecto (si no tiene rol asignado en metadata), asumimos que es un usuario normal/vendedor (BASIC)
   const role = sessionClaims?.metadata?.role as string | undefined;
-
-  // 1. Si es un Administrador, lo mandamos a su propia zona
+  console.log(sessionClaims, userId);
   if (role === APP_ROLES.ADMIN) {
-    redirect("/admin");
+    redirect("/admin/dashboard");
   }
 
   // 2. Si es un Buyer (Comprador) o Delivery (Repartidor), le bloqueamos el acceso
