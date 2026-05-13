@@ -2,6 +2,7 @@
 import { useAuth, useSession } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef } from "react";
+import { assignSellerRole } from "@/app/actions/auth.actions";
 
 export function WaitingForRole() {
   const { sessionClaims, isLoaded } = useAuth();
@@ -36,8 +37,7 @@ export function WaitingForRole() {
     if (!role && !assigningRef.current) {
       assigningRef.current = true;
 
-      fetch("/api/assign-role", { method: "POST" })
-        .then((res) => res.json())
+      assignSellerRole()
         .then(() => {
           pollingRef.current = setInterval(async () => {
             if (session) await session.reload();

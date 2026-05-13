@@ -56,19 +56,6 @@ function calcularTotalesYArmarItems(items: ItemInput[], products: Product[]) {
   return { totalAmount, totalWeight, orderItems };
 }
 
-async function updateStock(items: ItemInput[], products: Product[]) {
-  await Promise.all(
-    items.map(item => {
-      const product = products.find(p => p.id === item.productId)!;
-      const newStock = product.stock - item.quantity;
-      return productRepo.update(product.id, {
-        stock: newStock,
-        available: newStock > 0,
-      });
-    })
-  );
-}
-
 export async function POST(request: NextRequest) {
   try {
     await requireRole([APP_ROLES.BUYER]);
@@ -89,16 +76,18 @@ export async function POST(request: NextRequest) {
 
     const { totalAmount, totalWeight, orderItems } = calcularTotalesYArmarItems(items, products);
 
-    const order = await orderRepo.createWithItems({
+    const order = await orderRepo.createWithItemsAndUpdateStock({
       buyerId,
       storeId,
       deliveryAddress,
       totalAmount,
       totalWeight,
       items: orderItems,
+      itemsWithQuantity: items.map((item: ItemInput) => ({
+        productId: item.productId,
+        quantity: item.quantity,
+      })),
     });
-
-    await updateStock(items, products);
 
     return NextResponse.json({
       id: order.id,
@@ -109,7 +98,10 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('Error creando orden:', error);
-    return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });
+    const message = error instanceof Error ? error.message : 'Error desconocido';
+    return NextResponse.json({
+      error: 'Error interno del servidor',
+      message
+    }, { status: 500 });
   }
 }
-

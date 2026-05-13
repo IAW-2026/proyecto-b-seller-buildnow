@@ -1,5 +1,5 @@
 import prisma from '../../db/prisma';
-import { IOrderRepository, CreateOrderInput, ReadyOrderView, SellerOrderView } from '../../../core/repositories/IOrderRepository';
+import { IOrderRepository, CreateOrderInput, CreateOrderWithStockInput, ReadyOrderView, SellerOrderView } from '../../../core/repositories/IOrderRepository';
 import { Order, OrderStatus } from '@prisma/client';
 
 export class PrismaOrderRepository implements IOrderRepository {
@@ -69,19 +69,39 @@ export class PrismaOrderRepository implements IOrderRepository {
     }));
   }
 
-  async createWithItems(data: CreateOrderInput): Promise<Order> {
-    return prisma.order.create({
-      data: {
-        buyerId: data.buyerId,
-        storeId: data.storeId,
-        deliveryAddress: data.deliveryAddress,
-        totalAmount: data.totalAmount,
-        totalWeight: data.totalWeight,
-        status: 'PENDING_PAYMENT',
-        items: {
-          create: data.items,
+  async createWithItemsAndUpdateStock(data: CreateOrderWithStockInput): Promise<Order> {
+    return prisma.$transaction(async (tx) => {
+      const order = await tx.order.create({
+        data: {
+          buyerId: data.buyerId,
+          storeId: data.storeId,
+          deliveryAddress: data.deliveryAddress,
+          totalAmount: data.totalAmount,
+          totalWeight: data.totalWeight,
+          status: 'PENDING_PAYMENT',
+          items: {
+            create: data.items,
+          },
         },
-      },
+      });
+
+      await Promise.all(
+        data.itemsWithQuantity.map(({ productId, quantity }) =>
+          tx.product.update({
+            where: { id: productId },
+            data: { stock: { decrement: quantity } },
+          }).then((updated) =>
+            updated.stock <= 0
+              ? tx.product.update({
+                where: { id: productId },
+                data: { available: false },
+              })
+              : Promise.resolve(updated)
+          )
+        )
+      );
+
+      return order;
     });
   }
 

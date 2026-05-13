@@ -5,20 +5,41 @@ import { APP_ROLES } from '@/core/auth/roles';
 import { PrismaSellerRepository } from '@/infrastructure/repositories/prisma/PrismaSellerRepository';
 import { PrismaOrderRepository } from '@/infrastructure/repositories/prisma/PrismaOrderRepository';
 import { PrismaProductRepository } from '@/infrastructure/repositories/prisma/PrismaProductRepository';
-import { Package, TrendingUp, AlertCircle, CheckCircle2, ShoppingCart, Clock, ArrowRight } from "lucide-react";
+import { Package, TrendingUp, AlertCircle, CheckCircle2, ShoppingCart, ArrowRight } from "lucide-react";
 import Link from 'next/link';
 import { OrderStatus } from '@prisma/client';
 import { OrderStatusBadge } from './orders/OrderStatusBadge';
 
+async function getEarningsFromPaymentsApi(token: string): Promise<number | null> {
+  const baseUrl = process.env.PAYMENTS_API_URL;
+  if (!baseUrl) return null;
+
+  try {
+    const res = await fetch(`${baseUrl}/api/payments/earnings`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      cache: 'no-store',
+    });
+
+    if (!res.ok) return null;
+
+    const data = await res.json();
+    const earnings = data?.totalEarnings;
+
+    return typeof earnings === 'number' ? earnings : null;
+  } catch {
+    return null;
+  }
+}
+
 export default async function DashboardPage() {
   await requireRole([APP_ROLES.SELLER]);
-  const { userId } = await auth();
+  const { userId, getToken } = await auth();
   if (!userId) redirect('/sign-in');
 
-  console.log(userId);
   const sellerRepo = new PrismaSellerRepository();
   const seller = await sellerRepo.findById(userId);
-  console.log(seller);
 
   if (!seller || !seller.storeId) redirect('/seller/onboarding');
 
@@ -30,7 +51,6 @@ export default async function DashboardPage() {
     productRepo.findByStore(seller.storeId),
   ]);
 
-  // Métricas calculadas
   const pendingOrders = orders.filter(
     (o) => o.status === OrderStatus.PENDING_PAYMENT || o.status === OrderStatus.CONFIRMED
   ).length;
@@ -41,8 +61,11 @@ export default async function DashboardPage() {
   const todayDelivered = orders.filter(
     (o) => o.status === OrderStatus.DELIVERED && new Date(o.updatedAt) >= today
   );
-  const todayRevenue = todayDelivered.reduce((sum, o) => sum + o.totalAmount, 0);
   const todayDeliveredCount = todayDelivered.length;
+
+  const token = await getToken();
+  const earningsFromApi = token ? await getEarningsFromPaymentsApi(token) : null;
+  const todayRevenue = earningsFromApi ?? todayDelivered.reduce((sum, o) => sum + o.totalAmount, 0);
 
   const outOfStockCount = products.filter((p) => p.stock <= 0).length;
 
@@ -66,6 +89,12 @@ export default async function DashboardPage() {
           icon={<AlertCircle className="text-orange-500" size={24} />}
         />
         <MetricCard
+          title="Productos sin Stock"
+          value={String(outOfStockCount)}
+          subtitle="Requieren reposición"
+          icon={<Package className="text-red-500" size={24} />}
+        />
+        <MetricCard
           title="Ventas del Día"
           value={`$${todayRevenue.toLocaleString('es-AR', { minimumFractionDigits: 2 })}`}
           subtitle="Órdenes entregadas hoy"
@@ -76,12 +105,6 @@ export default async function DashboardPage() {
           value={String(todayDeliveredCount)}
           subtitle="Hoy"
           icon={<CheckCircle2 className="text-blue-500" size={24} />}
-        />
-        <MetricCard
-          title="Productos sin Stock"
-          value={String(outOfStockCount)}
-          subtitle="Requieren reposición"
-          icon={<Package className="text-red-500" size={24} />}
         />
       </div>
 

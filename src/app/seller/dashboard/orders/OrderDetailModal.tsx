@@ -73,8 +73,8 @@ export function OrderDetailModal({ order, isMarkingReady, onMarkReady, onClose }
 
       {/* Fechas */}
       <div className="flex justify-between text-xs text-zinc-500 pt-2 border-t border-zinc-200">
-        <span>Creada: {new Date(order.createdAt).toLocaleString('es-AR')}</span>
-        <span>Actualizada: {new Date(order.updatedAt).toLocaleString('es-AR')}</span>
+        <span suppressHydrationWarning >Creada: {new Date(order.createdAt).toLocaleString('es-AR')}</span>
+        <span suppressHydrationWarning >Actualizada: {new Date(order.updatedAt).toLocaleString('es-AR')}</span>
       </div>
 
       {/* Acción desde el modal */}

@@ -52,7 +52,7 @@ export function OrderRow({ order, isLoading, onViewDetail, onMarkReady }: OrderR
 
       {/* Fecha */}
       <td className="px-6 py-4">
-        <span className="text-sm text-zinc-500">
+        <span suppressHydrationWarning className="text-sm text-zinc-500">
           {formatDate(order.createdAt)}
         </span>
       </td>

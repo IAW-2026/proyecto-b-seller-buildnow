@@ -68,7 +68,7 @@ async function manejarCreacionOEdicion(data: WebhookEvent['data'] & {
 
   try {
     const existingUser = await sellerRepo.findById(id);
-
+    console.log(existingUser);
     if (existingUser) {
       await sellerRepo.update(id, { name, email, role });
     } else {

@@ -13,6 +13,15 @@ export type CreateOrderInput = {
   }[];
 };
 
+// Extiende CreateOrderInput con la cantidad original para poder
+// descontar el stock de cada producto en la misma transacción.
+export type CreateOrderWithStockInput = CreateOrderInput & {
+  itemsWithQuantity: {
+    productId: string;
+    quantity: number;
+  }[];
+};
+
 export type OrderItemDetail = {
   id: string;
   productId: string;
@@ -47,7 +56,6 @@ export interface IOrderRepository {
   findById(id: string): Promise<Order | null>;
   findByStore(storeId: string): Promise<SellerOrderView[]>;
   findReadyOrders(): Promise<ReadyOrderView[]>;
-  createWithItems(data: CreateOrderInput): Promise<Order>;
+  createWithItemsAndUpdateStock(data: CreateOrderWithStockInput): Promise<Order>;
   updateStatus(id: string, status: OrderStatus): Promise<Order>;
-
 }
