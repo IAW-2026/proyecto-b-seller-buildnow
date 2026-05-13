@@ -9,7 +9,6 @@ export default clerkMiddleware(async (auth, req) => {
   const { sessionClaims, userId } = await auth();
   const role = sessionClaims?.metadata?.role as string | undefined;
 
-  console.log(role);
   if (userId && !role && (isSellerRoute(req) || isAdminRoute(req))) {
     return NextResponse.redirect(new URL("/redirect", req.url));
   }

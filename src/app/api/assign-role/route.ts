@@ -1,42 +1,34 @@
 import { auth, clerkClient } from '@clerk/nextjs/server';
-import { redirect } from 'next/navigation';
+import { NextResponse } from 'next/server';
 import { APP_ROLES } from '@/core/auth/roles';
-import { PrismaSellerRepository } from '@/infrastructure/repositories/prisma/PrismaSellerRepository';
 
-export async function GET() {
-  const { userId } = await auth();
+export async function POST() {
+  try {
+    const { userId } = await auth();
 
-  if (!userId) {
-    return redirect('/sign-in');
-  }
+    if (!userId) {
+      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+    }
 
-  const client = await clerkClient();
-  const clerkUser = await client.users.getUser(userId);
+    const client = await clerkClient();
+    const clerkUser = await client.users.getUser(userId);
 
-  await client.users.updateUserMetadata(userId, {
-    publicMetadata: { role: APP_ROLES.SELLER }
-  });
+    // Si ya tiene role asignado, no reasignar
+    const existingRole = clerkUser.publicMetadata?.role as string | undefined;
+    if (existingRole) {
+      return NextResponse.json({ ok: true, alreadyAssigned: true });
+    }
 
-  const sellerRepo = new PrismaSellerRepository();
-  const existingSeller = await sellerRepo.findById(userId);
+    // Solo actualizar metadata en Clerk.
+    // Esto disparará user.updated en el webhook, que se encarga de registrar en la DB.
+    await client.users.updateUserMetadata(userId, {
+      publicMetadata: { role: APP_ROLES.SELLER }
+    });
 
-  if (!existingSeller) {
-      const email = clerkUser.emailAddresses[0]?.emailAddress || 'sin_email';
-      const name = `${clerkUser.firstName || ''} ${clerkUser.lastName || ''}`.trim() || 'Vendedor';
+    return NextResponse.json({ ok: true });
 
-      await sellerRepo.create({
-        id: userId,
-        email: email,
-        name: name,
-        role: 'SELLER',
-        storeId: null
-      });
-
-  }
-  
-  if (!existingSeller || !existingSeller.storeId) {
-    redirect('/seller/onboarding');
-  } else {
-    redirect('/seller/dashboard');
+  } catch (error) {
+    console.error('[assign-role] Error:', error);
+    return NextResponse.json({ error: 'Error interno al asignar role' }, { status: 500 });
   }
 }

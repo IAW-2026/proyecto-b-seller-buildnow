@@ -15,8 +15,11 @@ export default async function DashboardPage() {
   const { userId } = await auth();
   if (!userId) redirect('/sign-in');
 
+  console.log(userId);
   const sellerRepo = new PrismaSellerRepository();
   const seller = await sellerRepo.findById(userId);
+  console.log(seller);
+
   if (!seller || !seller.storeId) redirect('/seller/onboarding');
 
   const orderRepo = new PrismaOrderRepository();

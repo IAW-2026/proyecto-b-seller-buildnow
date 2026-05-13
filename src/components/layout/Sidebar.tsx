@@ -14,8 +14,7 @@ const sellerRoutes = [
   { href: '/seller/dashboard', label: 'Resumen', icon: LayoutDashboard },
   { href: '/seller/dashboard/orders', label: 'Órdenes', icon: ShoppingCart },
   { href: '/seller/dashboard/products', label: 'Productos', icon: Package },
-  { href: '/seller/dashboard/store', label: 'Mi Tienda', icon: Store },
-  { href: '/seller/dashboard/settings', label: 'Configuración', icon: Settings },
+  { href: '/seller/dashboard/store', label: 'Mi Tienda', icon: Store }
 ];
 
 const adminRoutes = [
@@ -39,42 +38,42 @@ export function Sidebar({ role = 'SELLER' }: { role?: 'ADMIN' | 'SELLER' }) {
           <span className="text-xl font-bold tracking-tight">BuildNow <span className="text-orange-500">Seller</span></span>
         </div>
       </div>
-      
+
       <nav className="flex-1 space-y-1 px-3 py-6 overflow-y-auto">
         <div className="mb-4 px-3 text-xs font-semibold uppercase tracking-wider text-zinc-500">
           Menu Principal
         </div>
         {routes.map((route) => {
           const Icon = route.icon;
-            
-            const isActive = 
+
+          const isActive =
             route.href === '/seller/dashboard' || route.href === '/admin/dashboard'
-              ? pathname === route.href 
+              ? pathname === route.href
               : pathname === route.href || pathname.startsWith(`${route.href}/`);
-          
-              return (
+
+          return (
             <Link
               key={route.href}
               href={route.href}
               className={cn(
                 "group flex items-center rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200",
-                isActive 
-                  ? "bg-gradient-to-r from-orange-500/10 to-transparent text-orange-500 border-l-2 border-orange-500" 
+                isActive
+                  ? "bg-gradient-to-r from-orange-500/10 to-transparent text-orange-500 border-l-2 border-orange-500"
                   : "border-l-2 border-transparent text-zinc-400 hover:bg-zinc-900/80 hover:text-white"
               )}
             >
-              <Icon 
+              <Icon
                 className={cn(
                   "mr-3 h-5 w-5 flex-shrink-0 transition-colors",
                   isActive ? "text-orange-500" : "text-zinc-500 group-hover:text-zinc-300"
-                )} 
+                )}
               />
               {route.label}
             </Link>
           );
         })}
       </nav>
-      
+
     </div>
   );
 }

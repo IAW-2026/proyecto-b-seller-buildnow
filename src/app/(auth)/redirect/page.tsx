@@ -1,7 +1,5 @@
-
 import { WaitingForRole } from "@/components/WaitingForRole";
 
-export default async function AuthRedirectPage() {
-
+export default function AuthRedirectPage() {
   return <WaitingForRole />;
 }

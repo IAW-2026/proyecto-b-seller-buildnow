@@ -39,6 +39,10 @@ function calcularTotalesYArmarItems(items: ItemInput[], products: Product[]) {
     const product = products.find(p => p.id === item.productId);
     if (!product) throw new Error(`Producto ${item.productId} no encontrado`);
 
+    if (product.stock < item.quantity) {
+      throw new Error(`Producto ${product.name} no tiene stock suficiente`);
+    }
+
     totalAmount += Number(product.price) * item.quantity;
     totalWeight += Number(product.weight) * item.quantity;
 
@@ -50,6 +54,19 @@ function calcularTotalesYArmarItems(items: ItemInput[], products: Product[]) {
   });
 
   return { totalAmount, totalWeight, orderItems };
+}
+
+async function updateStock(items: ItemInput[], products: Product[]) {
+  await Promise.all(
+    items.map(item => {
+      const product = products.find(p => p.id === item.productId)!;
+      const newStock = product.stock - item.quantity;
+      return productRepo.update(product.id, {
+        stock: newStock,
+        available: newStock > 0,
+      });
+    })
+  );
 }
 
 export async function POST(request: NextRequest) {
@@ -81,12 +98,15 @@ export async function POST(request: NextRequest) {
       items: orderItems,
     });
 
+    await updateStock(items, products);
+
     return NextResponse.json({
       id: order.id,
       totalAmount: Number(order.totalAmount),
       status: order.status,
       createdAt: order.createdAt.toISOString(),
     }, { status: 201 });
+
   } catch (error) {
     console.error('Error creando orden:', error);
     return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });

@@ -11,6 +11,34 @@ const VALID_TRANSITIONS: Record<string, string[]> = {
   ON_THE_WAY: ['DELIVERED'],
 };
 
+async function triggerPayouts(order: { id: string; storeId: string; totalAmount: number }) {
+  if(!process.env.DEVELOPMENT){
+    const PAYMENTS_API = process.env.PAYMENTS_API_URL;
+
+    await fetch(`${PAYMENTS_API}/api/payments/payouts`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        orderId: order.id,
+        recipientId: order.storeId,
+        recipientType: 'SELLER',
+        amount: order.totalAmount,
+      }),
+    });
+  }else{
+    async function triggerPayouts(order: { id: string; storeId: string; totalAmount: number }) {
+    console.log('[MOCK] Triggering payouts for order:', {
+      orderId: order.id,
+      recipientId: order.storeId,
+      recipientType: 'SELLER',
+      amount: order.totalAmount,
+    });
+
+    return { id: 'mock-payout-id', status: 'PENDING' };
+    }
+  }
+}
+
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -42,6 +70,14 @@ export async function PATCH(
     }
 
     const updatedOrder = await orderRepo.updateStatus(id, status);
+
+    if (status === 'DELIVERED') {
+      await triggerPayouts({
+        id: currentOrder.id,
+        storeId: currentOrder.storeId,
+        totalAmount: currentOrder.totalAmount.toNumber()
+      });
+    }
 
     return NextResponse.json({
       id: updatedOrder.id,
