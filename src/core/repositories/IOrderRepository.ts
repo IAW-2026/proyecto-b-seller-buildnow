@@ -42,6 +42,14 @@ export type SellerOrderView = {
   updatedAt: string;
 };
 
+export type PaginatedOrders = {
+  data: SellerOrderView[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+};
+
 export type ReadyOrderView = {
   id: string;
   storeName: string;
@@ -54,7 +62,7 @@ export type ReadyOrderView = {
 
 export interface IOrderRepository {
   findById(id: string): Promise<Order | null>;
-  findByStore(storeId: string): Promise<SellerOrderView[]>;
+  findByStore(storeId: string, page?: number, pageSize?: number, status?: string): Promise<PaginatedOrders>;
   findReadyOrders(): Promise<ReadyOrderView[]>;
   createWithItemsAndUpdateStock(data: CreateOrderWithStockInput): Promise<Order>;
   updateStatus(id: string, status: OrderStatus): Promise<Order>;

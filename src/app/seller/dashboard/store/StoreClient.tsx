@@ -31,16 +31,16 @@ export function StoreClient({ store }: { store: Store }) {
   return (
     <div className="max-w-3xl">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-white flex items-center gap-2">
+        <h1 className="text-2xl font-bold text-zinc-900 flex items-center gap-2">
           <StoreIcon className="w-6 h-6 text-orange-500" />
           Mi Tienda
         </h1>
-        <p className="text-zinc-400 text-sm mt-1">
+        <p className="text-zinc-500 text-sm mt-1">
           Administra la información pública y el estado de tu corralón.
         </p>
       </div>
 
-      <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden p-6">
+      <div className="bg-white border border-zinc-200 rounded-xl overflow-hidden shadow-sm p-6">
         {successMsg && (
           <div className="mb-6 p-4 rounded-lg bg-green-500/10 border border-green-500/20 text-green-400 flex items-start gap-3">
             <Info className="w-5 h-5 flex-shrink-0 mt-0.5" />
@@ -50,7 +50,7 @@ export function StoreClient({ store }: { store: Store }) {
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label className="block text-sm font-medium text-zinc-300 mb-1">
+            <label className="block text-sm font-medium text-zinc-700 mb-1">
               Nombre del Corralón
             </label>
             <input
@@ -58,13 +58,13 @@ export function StoreClient({ store }: { store: Store }) {
               name="name"
               required
               defaultValue={store.name}
-              className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-orange-500 transition-colors"
+              className="w-full bg-white border border-zinc-200 rounded-lg px-4 py-2.5 text-zinc-900 placeholder-zinc-400 focus:outline-none focus:border-orange-500 transition-colors"
               placeholder="Ej: Corralón El Constructor"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-zinc-300 mb-1">
+            <label className="block text-sm font-medium text-zinc-700 mb-1">
               Dirección
             </label>
             <input
@@ -72,26 +72,26 @@ export function StoreClient({ store }: { store: Store }) {
               name="address"
               required
               defaultValue={store.address}
-              className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-orange-500 transition-colors"
+              className="w-full bg-white border border-zinc-200 rounded-lg px-4 py-2.5 text-zinc-900 placeholder-zinc-400 focus:outline-none focus:border-orange-500 transition-colors"
               placeholder="Ej: Av. San Martín 1234, Ciudad"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-zinc-300 mb-1">
+            <label className="block text-sm font-medium text-zinc-700 mb-1">
               Descripción (Opcional)
             </label>
             <textarea
               name="description"
               rows={4}
               defaultValue={store.description || ''}
-              className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-orange-500 transition-colors resize-none"
+              className="w-full bg-white border border-zinc-200 rounded-lg px-4 py-2.5 text-zinc-900 placeholder-zinc-400 focus:outline-none focus:border-orange-500 transition-colors resize-none"
               placeholder="Breve descripción de tu negocio, horarios, etc."
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-zinc-300 mb-1">
+            <label className="block text-sm font-medium text-zinc-700 mb-1">
               Estado de la Tienda
             </label>
             <div className="text-sm text-zinc-500 mb-3">
@@ -101,7 +101,7 @@ export function StoreClient({ store }: { store: Store }) {
               name="status"
               required
               defaultValue={store.status}
-              className="w-full sm:w-1/2 bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-orange-500 transition-colors appearance-none"
+              className="w-full sm:w-1/2 bg-white border border-zinc-200 rounded-lg px-4 py-2.5 text-zinc-900 focus:outline-none focus:border-orange-500 transition-colors appearance-none"
             >
               <option value={StoreStatus.OPEN}>Abierta (Recibir pedidos)</option>
               <option value={StoreStatus.CLOSE}>Cerrada (Pausar atención)</option>
@@ -109,12 +109,12 @@ export function StoreClient({ store }: { store: Store }) {
           </div>
 
           {error && (
-            <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
+            <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500 text-sm">
               {error}
             </div>
           )}
 
-          <div className="pt-4 border-t border-zinc-800 flex justify-end">
+          <div className="pt-4 border-t border-zinc-200 flex justify-end">
             <button
               type="submit"
               disabled={isLoading}

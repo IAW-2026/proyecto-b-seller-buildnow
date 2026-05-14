@@ -33,6 +33,8 @@ async function getEarningsFromPaymentsApi(token: string): Promise<number | null>
   }
 }
 
+const PAGE_SIZE = Number(process.env.ORDERS_PAGE_SIZE) || 10;
+
 export default async function DashboardPage() {
   await requireRole([APP_ROLES.SELLER]);
   const { userId, getToken } = await auth();
@@ -41,13 +43,13 @@ export default async function DashboardPage() {
   const sellerRepo = new PrismaSellerRepository();
   const seller = await sellerRepo.findById(userId);
 
-  if (!seller || !seller.storeId) redirect('/seller/onboarding');
+  if (!seller || !seller.storeId) redirect('/sign-in');
 
   const orderRepo = new PrismaOrderRepository();
   const productRepo = new PrismaProductRepository();
 
-  const [orders, products] = await Promise.all([
-    orderRepo.findByStore(seller.storeId),
+  const [{ data: orders }, products] = await Promise.all([
+    orderRepo.findByStore(seller.storeId, 1, PAGE_SIZE),
     productRepo.findByStore(seller.storeId),
   ]);
 
@@ -55,17 +57,9 @@ export default async function DashboardPage() {
     (o) => o.status === OrderStatus.PENDING_PAYMENT || o.status === OrderStatus.CONFIRMED
   ).length;
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  const todayDelivered = orders.filter(
-    (o) => o.status === OrderStatus.DELIVERED && new Date(o.updatedAt) >= today
-  );
-  const todayDeliveredCount = todayDelivered.length;
-
   const token = await getToken();
   const earningsFromApi = token ? await getEarningsFromPaymentsApi(token) : null;
-  const todayRevenue = earningsFromApi ?? todayDelivered.reduce((sum, o) => sum + o.totalAmount, 0);
+  const todayRevenue = earningsFromApi ?? 0;
 
   const outOfStockCount = products.filter((p) => p.stock <= 0).length;
 
@@ -97,14 +91,8 @@ export default async function DashboardPage() {
         <MetricCard
           title="Ventas del Día"
           value={`$${todayRevenue.toLocaleString('es-AR', { minimumFractionDigits: 2 })}`}
-          subtitle="Órdenes entregadas hoy"
+          subtitle=""
           icon={<TrendingUp className="text-emerald-500" size={24} />}
-        />
-        <MetricCard
-          title="Órdenes Entregadas"
-          value={String(todayDeliveredCount)}
-          subtitle="Hoy"
-          icon={<CheckCircle2 className="text-blue-500" size={24} />}
         />
       </div>
 

@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { ProductWithCategory } from '@/core/repositories/IProductRepository';
 import { Category } from '@prisma/client';
-import { Plus, Edit2, Trash2 } from 'lucide-react';
+import { Plus, Edit2, Trash2, Package } from 'lucide-react';
 import { Modal } from '@/components/ui/Modal';
 import { createProductAction, updateProductAction, deleteProductAction } from '@/app/actions/product.actions';
 
@@ -23,6 +23,7 @@ export function ProductsClient({
   const [editingProduct, setEditingProduct] = useState<SerializedProduct | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const openCreateModal = () => {
     setEditingProduct(null);
@@ -46,7 +47,7 @@ export function ProductsClient({
     try {
       await deleteProductAction(id);
     } catch (err: any) {
-      alert(err.message || 'Error al eliminar el producto');
+      setDeleteError(err.message);
     }
   };
 
@@ -74,8 +75,11 @@ export function ProductsClient({
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-white">Mis Productos</h1>
-          <p className="text-zinc-400 text-sm mt-1">
+          <h1 className="text-2xl font-bold text-zinc-900 flex items-center gap-2">
+            <Package className="w-6 h-6 text-orange-500" />
+            Mis Productos
+          </h1>
+          <p className="text-zinc-500 text-sm mt-1">
             Gestiona el inventario de tu corralón
           </p>
         </div>
@@ -88,10 +92,10 @@ export function ProductsClient({
         </button>
       </div>
 
-      <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden">
+      <div className="bg-white border border-zinc-200 rounded-xl overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-zinc-300">
-            <thead className="bg-zinc-950/50 border-b border-zinc-800 text-sm uppercase">
+          <table className="w-full text-left text-zinc-600">
+            <thead className="bg-zinc-50 border-b border-zinc-200 text-sm uppercase text-zinc-500">
               <tr>
                 <th className="px-6 py-4 font-medium">Nombre</th>
                 <th className="px-6 py-4 font-medium">Categoría</th>
@@ -101,32 +105,32 @@ export function ProductsClient({
                 <th className="px-6 py-4 font-medium text-right">Acciones</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-zinc-800">
+            <tbody className="divide-y divide-zinc-100">
               {products.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-8 text-center text-zinc-500">
+                  <td colSpan={6} className="px-6 py-12 text-center text-zinc-500">
                     No tienes productos registrados.
                   </td>
                 </tr>
               ) : null}
-              
+
               {products.map((product) => (
-                <tr key={product.id} className="hover:bg-zinc-800/30 transition-colors">
+                <tr key={product.id} className="hover:bg-zinc-50/50 transition-colors">
                   <td className="px-6 py-4">
-                    <div className="font-medium text-white">{product.name}</div>
+                    <div className="font-medium text-zinc-900">{product.name}</div>
                     <div className="text-xs text-zinc-500">{Number(product.weight)} kg</div>
                   </td>
                   <td className="px-6 py-4">{product.categoryName}</td>
-                  <td className="px-6 py-4 font-medium text-orange-500">
+                  <td className="px-6 py-4 font-medium text-orange-600">
                     ${Number(product.price).toLocaleString()}
                   </td>
                   <td className="px-6 py-4">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${product.stock <= 5 ? 'bg-red-500/10 text-red-500' : 'bg-zinc-800 text-zinc-300'}`}>
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${product.stock <= 5 ? 'bg-red-500/10 text-red-500' : 'bg-zinc-100 text-zinc-600'}`}>
                       {product.stock} un.
                     </span>
                   </td>
                   <td className="px-6 py-4">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${product.available ? 'bg-green-500/10 text-green-500' : 'bg-zinc-800 text-zinc-500'}`}>
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${product.available ? 'bg-green-500/10 text-green-600' : 'bg-zinc-100 text-zinc-500'}`}>
                       {product.available ? 'Activo' : 'Inactivo'}
                     </span>
                   </td>
@@ -134,14 +138,14 @@ export function ProductsClient({
                     <div className="flex items-center justify-end gap-2">
                       <button
                         onClick={() => openEditModal(product)}
-                        className="p-2 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors"
+                        className="p-2 text-zinc-400 hover:text-zinc-900 hover:bg-zinc-100 rounded-lg transition-colors"
                         title="Editar"
                       >
                         <Edit2 className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => handleDelete(product.id)}
-                        className="p-2 text-zinc-400 hover:text-red-500 hover:bg-zinc-800 rounded-lg transition-colors cursor-pointer"
+                        className="p-2 text-zinc-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
                         title="Eliminar"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -152,6 +156,17 @@ export function ProductsClient({
               ))}
             </tbody>
           </table>
+          {deleteError && (
+            <div className="mt-4 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500 text-sm flex items-center justify-between">
+              <span>{deleteError}</span>
+              <button
+                onClick={() => setDeleteError(null)}
+                className="ml-4 text-red-400 hover:text-red-600 transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -159,27 +174,28 @@ export function ProductsClient({
         isOpen={isModalOpen}
         onClose={closeModal}
         title={editingProduct ? 'Editar Producto' : 'Nuevo Producto'}
+        variant="light"
       >
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-zinc-300 mb-1">Nombre del producto</label>
+            <label className="block text-sm font-medium text-zinc-700 mb-1">Nombre del producto</label>
             <input
               type="text"
               name="name"
               required
               defaultValue={editingProduct?.name}
-              className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-orange-500 transition-colors"
+              className="w-full bg-white border border-zinc-200 rounded-lg px-4 py-2.5 text-zinc-900 placeholder-zinc-400 focus:outline-none focus:border-orange-500 transition-colors"
               placeholder="Ej: Cemento Loma Negra 50kg"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-zinc-300 mb-1">Categoría</label>
+            <label className="block text-sm font-medium text-zinc-700 mb-1">Categoría</label>
             <select
               name="categoryId"
               required
               defaultValue={editingProduct?.categoryId}
-              className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-orange-500 transition-colors appearance-none"
+              className="w-full bg-white border border-zinc-200 rounded-lg px-4 py-2.5 text-zinc-900 focus:outline-none focus:border-orange-500 transition-colors appearance-none"
             >
               <option value="" disabled>Selecciona una categoría</option>
               {categories.map(c => (
@@ -190,7 +206,7 @@ export function ProductsClient({
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-zinc-300 mb-1">Precio ($)</label>
+              <label className="block text-sm font-medium text-zinc-700 mb-1">Precio ($)</label>
               <input
                 type="number"
                 name="price"
@@ -198,26 +214,26 @@ export function ProductsClient({
                 min="0"
                 required
                 defaultValue={editingProduct ? Number(editingProduct.price) : ''}
-                className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-orange-500 transition-colors"
+                className="w-full bg-white border border-zinc-200 rounded-lg px-4 py-2.5 text-zinc-900 placeholder-zinc-400 focus:outline-none focus:border-orange-500 transition-colors"
                 placeholder="0.00"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-zinc-300 mb-1">Stock</label>
+              <label className="block text-sm font-medium text-zinc-700 mb-1">Stock</label>
               <input
                 type="number"
                 name="stock"
                 min="0"
                 required
                 defaultValue={editingProduct ? editingProduct.stock : ''}
-                className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-orange-500 transition-colors"
+                className="w-full bg-white border border-zinc-200 rounded-lg px-4 py-2.5 text-zinc-900 placeholder-zinc-400 focus:outline-none focus:border-orange-500 transition-colors"
                 placeholder="0"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-zinc-300 mb-1">Peso (kg)</label>
+            <label className="block text-sm font-medium text-zinc-700 mb-1">Peso (kg)</label>
             <input
               type="number"
               name="weight"
@@ -225,7 +241,7 @@ export function ProductsClient({
               min="0"
               required
               defaultValue={editingProduct ? Number(editingProduct.weight) : ''}
-              className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-orange-500 transition-colors"
+              className="w-full bg-white border border-zinc-200 rounded-lg px-4 py-2.5 text-zinc-900 placeholder-zinc-400 focus:outline-none focus:border-orange-500 transition-colors"
               placeholder="0.00"
             />
           </div>
@@ -236,24 +252,24 @@ export function ProductsClient({
               name="available"
               id="available"
               defaultChecked={editingProduct ? editingProduct.available : true}
-              className="w-4 h-4 accent-orange-500 bg-zinc-950 border-zinc-800 rounded"
+              className="w-4 h-4 accent-orange-500 rounded"
             />
-            <label htmlFor="available" className="text-sm font-medium text-zinc-300 cursor-pointer">
+            <label htmlFor="available" className="text-sm font-medium text-zinc-700 cursor-pointer">
               Producto activo (visible en catálogo)
             </label>
           </div>
 
           {error && (
-            <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
+            <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500 text-sm">
               {error}
             </div>
           )}
 
-          <div className="pt-4 mt-6 border-t border-zinc-800 flex justify-end gap-3">
+          <div className="pt-4 mt-6 border-t border-zinc-200 flex justify-end gap-3">
             <button
               type="button"
               onClick={closeModal}
-              className="px-4 py-2 text-sm font-medium text-zinc-400 hover:text-white transition-colors cursor-pointer"
+              className="px-4 py-2 text-sm font-medium text-zinc-500 hover:text-zinc-900 transition-colors cursor-pointer"
             >
               Cancelar
             </button>

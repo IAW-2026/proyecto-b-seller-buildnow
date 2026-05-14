@@ -17,16 +17,12 @@ export default async function StorePage() {
   const sellerRepo = new PrismaSellerRepository();
   const seller = await sellerRepo.findById(userId);
 
-  if (!seller || !seller.storeId) {
-    redirect('/seller/onboarding');
-  }
+  if (!seller || !seller.storeId) redirect('/sign-in');
 
   const storeRepo = new PrismaStoreRepository();
   const store = await storeRepo.findById(seller.storeId);
 
-  if (!store) {
-    redirect('/seller/onboarding');
-  }
+  if (!store) redirect('/sign-in');
 
   return (
     <div className="p-8 max-w-7xl mx-auto w-full">

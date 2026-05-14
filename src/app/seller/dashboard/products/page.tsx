@@ -14,7 +14,7 @@ export default async function ProductsPage() {
 
   const sellerRepo = new PrismaSellerRepository();
   const seller = await sellerRepo.findById(userId);
-  if (!seller || !seller.storeId) redirect('/seller/onboarding');
+  if (!seller || !seller.storeId) redirect('/sign-in');
 
   const productRepo = new PrismaProductRepository();
   const categoryRepo = new PrismaCategoryRepository();

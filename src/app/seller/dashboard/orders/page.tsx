@@ -6,21 +6,37 @@ import { PrismaSellerRepository } from '@/infrastructure/repositories/prisma/Pri
 import { PrismaOrderRepository } from '@/infrastructure/repositories/prisma/PrismaOrderRepository';
 import { OrdersClient } from './OrdersClient';
 
-export default async function OrdersPage() {
+const PAGE_SIZE = Number(process.env.ORDERS_PAGE_SIZE) || 10;
+
+export default async function OrdersPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string; status?: string }>;
+}) {
   await requireRole([APP_ROLES.SELLER]);
   const { userId } = await auth();
   if (!userId) redirect('/sign-in');
 
   const sellerRepo = new PrismaSellerRepository();
   const seller = await sellerRepo.findById(userId);
-  if (!seller || !seller.storeId) redirect('/seller/onboarding');
+  if (!seller || !seller.storeId) redirect('/sign-in');
+
+  const { page: pageParam, status } = await searchParams;
+  const page = Math.max(1, Number(pageParam) || 1);
 
   const orderRepo = new PrismaOrderRepository();
-  const orders = await orderRepo.findByStore(seller.storeId);
+  const result = await orderRepo.findByStore(seller.storeId, page, PAGE_SIZE, status);
 
   return (
     <div className="p-8 max-w-7xl mx-auto">
-      <OrdersClient orders={orders} />
+      <OrdersClient
+        orders={result.data}
+        total={result.total}
+        page={result.page}
+        pageSize={result.pageSize}
+        totalPages={result.totalPages}
+        activeStatus={status ?? 'ALL'}
+      />
     </div>
   );
 }

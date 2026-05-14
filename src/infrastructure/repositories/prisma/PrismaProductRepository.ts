@@ -1,6 +1,6 @@
 import prisma from '../../db/prisma';
 import { IProductRepository, ProductWithCategory } from '../../../core/repositories/IProductRepository';
-import { Product } from '@prisma/client';
+import { Product, Prisma } from '@prisma/client';
 
 export class PrismaProductRepository implements IProductRepository {
   async findById(id: string): Promise<Product | null> {
@@ -55,7 +55,7 @@ export class PrismaProductRepository implements IProductRepository {
 
   async create(data: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>): Promise<Product> {
     const payload = { ...data };
-    
+
     if (payload.stock <= 0) {
       payload.available = false;
     }
@@ -65,7 +65,7 @@ export class PrismaProductRepository implements IProductRepository {
 
   async update(id: string, data: Partial<Product>): Promise<Product> {
     const payload = { ...data };
-    
+
     if (payload.stock !== undefined && payload.stock <= 0) {
       payload.available = false;
     }
@@ -74,6 +74,13 @@ export class PrismaProductRepository implements IProductRepository {
   }
 
   async delete(id: string): Promise<void> {
-    await prisma.product.delete({ where: { id } });
+    try {
+      await prisma.product.delete({ where: { id } });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2003") {
+        throw new Error("No se puede eliminar el producto porque tiene órdenes asociadas.");
+      }
+      throw error;
+    }
   }
 }

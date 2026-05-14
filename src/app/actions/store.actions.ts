@@ -9,12 +9,11 @@ import { APP_ROLES } from '@/core/auth/roles';
 import { PrismaStoreRepository } from '@/infrastructure/repositories/prisma/PrismaStoreRepository';
 import { PrismaSellerRepository } from '@/infrastructure/repositories/prisma/PrismaSellerRepository';
 import { StoreStatus } from '@prisma/client';
-import { getOrCreateSeller } from './seller.actions';
+import { getSeller } from './seller.actions';
 
 export async function createStoreAction(formData: FormData) {
   const { userId } = await auth();
 
-  console.log(userId);
 
   if (!userId) {
     throw new Error('No autorizado');
@@ -31,7 +30,7 @@ export async function createStoreAction(formData: FormData) {
   const storeRepo = new PrismaStoreRepository();
   const sellerRepo = new PrismaSellerRepository();
 
-  const seller = await getOrCreateSeller();
+  const seller = await getSeller();
 
   if (seller.storeId) {
     redirect('/seller/dashboard');
