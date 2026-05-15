@@ -60,7 +60,16 @@ export type ReadyOrderView = {
   createdAt: string;
 };
 
+export type PaginatedAdminOrders = {
+  data: (Order & { store: { name: string } | null })[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+};
+
 export interface IOrderRepository {
+  findAll(page?: number, pageSize?: number): Promise<PaginatedAdminOrders>;
   findById(id: string): Promise<Order | null>;
   findByStore(storeId: string, page?: number, pageSize?: number, status?: string): Promise<PaginatedOrders>;
   findReadyOrders(): Promise<ReadyOrderView[]>;

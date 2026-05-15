@@ -4,8 +4,9 @@ import { useState, useTransition } from 'react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { SellerOrderView } from '@/core/repositories/IOrderRepository';
 import { OrderStatus } from '@prisma/client';
-import { ShoppingCart, Filter, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ShoppingCart, Filter } from 'lucide-react';
 import { Modal } from '@/components/ui/Modal';
+import { Pagination } from '@/components/ui/Pagination';
 import { updateOrderStatusAction } from '@/app/actions/order.actions';
 import toast from 'react-hot-toast';
 import { FILTER_TABS } from './order.constants';
@@ -156,38 +157,13 @@ export function OrdersClient({
           </table>
         </div>
 
-        {/* Paginación */}
-        {totalPages > 1 && (
-          <div className="flex items-center justify-between px-6 py-4 border-t border-zinc-100 bg-zinc-50/50">
-            <p className="text-sm text-zinc-500">
-              Mostrando <span className="font-medium text-zinc-700">{start}–{end}</span> de{' '}
-              <span className="font-medium text-zinc-700">{total}</span> órdenes
-            </p>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => navigate(page - 1)}
-                disabled={page <= 1}
-                className="inline-flex items-center gap-1 px-3 py-1.5 text-sm rounded-lg border border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
-              >
-                <ChevronLeft className="w-4 h-4" />
-                Anterior
-              </button>
-
-              <span className="text-sm text-zinc-500 px-2">
-                Página {page} de {totalPages}
-              </span>
-
-              <button
-                onClick={() => navigate(page + 1)}
-                disabled={page >= totalPages}
-                className="inline-flex items-center gap-1 px-3 py-1.5 text-sm rounded-lg border border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
-              >
-                Siguiente
-                <ChevronRight className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-        )}
+        <Pagination 
+          page={page} 
+          totalPages={totalPages} 
+          total={total} 
+          pageSize={pageSize} 
+          onPageChange={newPage => navigate(newPage)}
+        />
       </div>
 
       {/* Modal de Detalle */}

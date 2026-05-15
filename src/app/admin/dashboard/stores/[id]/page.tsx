@@ -13,7 +13,7 @@ export default async function AdminStoreDetailPage({
   params: Promise<{ id: string }>;
 }) {
   await requireRole([APP_ROLES.ADMIN]);
-  
+
   const { id } = await params;
 
   const storeRepo = new PrismaStoreRepository();
@@ -21,27 +21,26 @@ export default async function AdminStoreDetailPage({
   const orderRepo = new PrismaOrderRepository();
 
   const store = await storeRepo.findById(id);
-  
+
   if (!store) {
     notFound();
   }
 
   const [products, orders] = await Promise.all([
     productRepo.findByStore(id),
-    // @ts-ignore - Nuevamente bypass temporal para órdenes
-    orderRepo.findByStore ? orderRepo.findByStore(id) : []
+    orderRepo.findByStore(id)
   ]);
 
   const isSuspended = store.status === 'SUSPENDED';
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      
+
       {/* Cabecera y botón de regreso */}
       <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
         <div className="space-y-4">
-          <Link 
-            href="/admin/dashboard/stores" 
+          <Link
+            href="/admin/dashboard/stores"
             className="inline-flex items-center gap-1 text-sm text-zinc-500 hover:text-zinc-900 transition-colors"
           >
             <ArrowLeft size={16} /> Volver a Corralones
@@ -88,13 +87,13 @@ export default async function AdminStoreDetailPage({
 
       <div className="h-px bg-zinc-200 w-full" />
 
-      {/* Catálogo de Productos (Solo lectura) */}
+      {/* Catálogo de Productos*/}
       <div>
         <h3 className="text-lg font-semibold text-zinc-900 mb-4 flex items-center gap-2">
-          <Package size={20} className="text-zinc-500" /> 
+          <Package size={20} className="text-zinc-500" />
           Catálogo Activo
         </h3>
-        
+
         <div className="rounded-xl border border-zinc-200 bg-white shadow-sm overflow-hidden">
           {products.length === 0 ? (
             <div className="p-8 text-center text-zinc-500 text-sm">Este corralón aún no ha cargado productos.</div>
@@ -117,9 +116,8 @@ export default async function AdminStoreDetailPage({
                       ${Number(p.price).toLocaleString('es-AR')}
                     </td>
                     <td className="px-6 py-3 text-sm">
-                      <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
-                        p.stock > 0 ? 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-600/20' : 'bg-red-50 text-red-700 ring-1 ring-red-600/20'
-                      }`}>
+                      <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${p.stock > 0 ? 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-600/20' : 'bg-red-50 text-red-700 ring-1 ring-red-600/20'
+                        }`}>
                         {p.stock} un.
                       </span>
                     </td>

@@ -4,12 +4,22 @@ import { PrismaOrderRepository } from '@/infrastructure/repositories/prisma/Pris
 import { OrderStatusBadge } from '@/app/seller/dashboard/orders/OrderStatusBadge';
 import { ShoppingCart } from 'lucide-react';
 import Link from 'next/link';
+import { Pagination } from '@/components/ui/Pagination';
 
-export default async function AdminOrdersPage() {
+export default async function AdminOrdersPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
   await requireRole([APP_ROLES.ADMIN]);
 
+  const params = await searchParams;
+  const page = Number(params.page) || 1;
+  const PAGE_SIZE = 10;
+
   const orderRepo = new PrismaOrderRepository();
-  const orders = await orderRepo.findAll();
+  const paginatedResult = await orderRepo.findAll(page, PAGE_SIZE);
+  const { data: orders, total, totalPages } = paginatedResult;
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -47,12 +57,11 @@ export default async function AdminOrdersPage() {
                     </span>
                   </td>
                   <td className="px-6 py-4">
-                     <Link href={`/admin/dashboard/stores/${order.storeId}`} className="text-sm font-medium text-blue-600 hover:underline">
-                        {order.store?.name || 'Corralón Desconocido'}
-                     </Link>
+                    <Link href={`/admin/dashboard/stores/${order.storeId}`} className="text-sm font-medium text-blue-600 hover:underline">
+                      {order.store?.name || 'Corralón Desconocido'}
+                    </Link>
                   </td>
                   <td className="px-6 py-4">
-                    {/* Reutilizamos el badge de Vendedor */}
                     <OrderStatusBadge status={order.status} />
                   </td>
                   <td className="px-6 py-4 font-medium text-zinc-900">
@@ -71,6 +80,13 @@ export default async function AdminOrdersPage() {
             </tbody>
           </table>
         )}
+
+        <Pagination
+          page={page}
+          totalPages={totalPages}
+          total={total}
+          pageSize={PAGE_SIZE}
+        />
       </div>
     </div>
   );

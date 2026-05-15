@@ -16,11 +16,10 @@ export default async function AdminDashboardPage() {
 
   const [stores, orders, products] = await Promise.all([
     storeRepo.findAll(),
-    orderRepo.findAll(), 
+    orderRepo.findAll(),
     productRepo.findAll()
   ]);
 
-  const totalStores = stores.length;
   const activeStores = stores.filter((s: { status: StoreStatus }) => s.status === StoreStatus.OPEN || s.status === StoreStatus.CLOSE).length;
   const suspendedStores = stores.filter((s: { status: StoreStatus }) => s.status === StoreStatus.SUSPENDED).length;
 
@@ -40,7 +39,7 @@ export default async function AdminDashboardPage() {
         />
         <MetricCard
           title="Órdenes (Global)"
-          value={String(orders.length)}
+          value={String(orders.total)}
           subtitle="Total histórico procesado"
           icon={<ShoppingCart className="text-orange-500" size={24} />}
         />
@@ -54,4 +53,4 @@ export default async function AdminDashboardPage() {
     </div>
   );
 }
-
+

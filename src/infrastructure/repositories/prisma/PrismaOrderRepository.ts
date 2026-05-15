@@ -1,17 +1,34 @@
 import prisma from '../../db/prisma';
-import { IOrderRepository, CreateOrderInput, CreateOrderWithStockInput, PaginatedOrders, ReadyOrderView, SellerOrderView } from '../../../core/repositories/IOrderRepository';
+import { IOrderRepository, CreateOrderInput, CreateOrderWithStockInput, PaginatedOrders, ReadyOrderView, SellerOrderView, PaginatedAdminOrders } from '../../../core/repositories/IOrderRepository';
 import { Order, OrderStatus } from '@prisma/client';
 
 const MINUTOS_TO_WAIT_BEFORE_DELETE = 20;
 
 export class PrismaOrderRepository implements IOrderRepository {
-  async findAll(): Promise<Order[]> {
-    return prisma.order.findMany({
-      orderBy: { createdAt: 'desc' },
-      include: {
-        store: true,
-      }
-    });
+  async findAll(page = 1, pageSize = 10): Promise<PaginatedAdminOrders> {
+    const skip = (page - 1) * pageSize;
+
+    const [orders, total] = await Promise.all([
+      prisma.order.findMany({
+        orderBy: { createdAt: 'desc' },
+        include: {
+          store: {
+            select: { name: true }
+          },
+        },
+        skip,
+        take: pageSize,
+      }),
+      prisma.order.count(),
+    ]);
+
+    return {
+      data: orders as any, // Prisma types are sometimes strict about includes
+      total,
+      page,
+      pageSize,
+      totalPages: Math.ceil(total / pageSize),
+    };
   }
 
   async findById(id: string): Promise<Order | null> {

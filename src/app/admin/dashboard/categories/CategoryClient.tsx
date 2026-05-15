@@ -2,17 +2,15 @@
 
 import { useState, useTransition } from 'react';
 import { createCategoryAction, deleteCategoryAction, updateCategoryAction } from '@/app/actions/category.actions';
+import { ConfirmDeleteModal } from '@/components/ui/ConfirmDeleteModal';
 import { Trash2, Loader2, PlusCircle, Edit2, X, Check } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 export function CategoryCreateForm() {
   const [isPending, startTransition] = useTransition();
-  const [error, setError] = useState<string | null>(null);
-  const [showSuccess, setShowSuccess] = useState(false);
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setError(null);
-    setShowSuccess(false);
     const formData = new FormData(e.currentTarget);
     const form = e.currentTarget;
 
@@ -20,10 +18,9 @@ export function CategoryCreateForm() {
       try {
         await createCategoryAction(formData);
         form.reset();
-        setShowSuccess(true);
-        setTimeout(() => setShowSuccess(false), 1500); // Se muestra por 1.5 segundos
+        toast.success('Categoría creada con éxito');
       } catch (err: any) {
-        setError(err.message);
+        toast.error(err.message || 'Error al crear la categoría');
       }
     });
   };
@@ -39,14 +36,8 @@ export function CategoryCreateForm() {
           placeholder="Ej: Materiales Gruesos" 
           required
           disabled={isPending}
-          onChange={() => { 
-            if (error) setError(null);
-            if (showSuccess) setShowSuccess(false);
-          }}
           className="block w-full rounded-md border-0 px-3 py-2 pl-4 text-zinc-900 shadow-sm ring-1 ring-inset ring-zinc-300 placeholder:text-zinc-400 focus:ring-2 focus:ring-inset focus:ring-orange-600 sm:text-sm sm:leading-6"
         />
-        {error && <p className="text-red-500 text-xs mt-2 absolute">{error}</p>}
-        {showSuccess && <p className="text-emerald-600 text-xs mt-2 font-medium flex items-center gap-1 absolute"><Check size={14} /> ¡Categoría creada con éxito!</p>}
       </div>
       <button 
         type="submit" 
@@ -62,28 +53,40 @@ export function CategoryCreateForm() {
 
 export function CategoryDeleteButton({ id }: { id: string }) {
   const [isPending, startTransition] = useTransition();
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const handleDelete = () => {
-    if (!confirm('¿Estás seguro que deseas borrar esta categoría?')) return;
-    
+  const handleConfirmDelete = () => {
     startTransition(async () => {
       try {
         await deleteCategoryAction(id);
+        toast.success('Categoría eliminada con éxito');
+        setIsModalOpen(false);
       } catch (err: any) {
-        alert(err.message);
+        toast.error(err.message || 'Error al eliminar la categoría');
       }
     });
   };
 
   return (
-    <button
-      onClick={handleDelete}
-      disabled={isPending}
-      className="inline-flex items-center justify-center rounded-md p-2 text-red-600 hover:bg-red-50 hover:text-red-700 transition-colors disabled:opacity-50"
-      title="Eliminar categoría"
-    >
-      {isPending ? <Loader2 size={18} className="animate-spin" /> : <Trash2 size={18} />}
-    </button>
+    <>
+      <button
+        onClick={() => setIsModalOpen(true)}
+        disabled={isPending}
+        className="inline-flex items-center justify-center rounded-md p-2 text-red-600 hover:bg-red-50 hover:text-red-700 transition-colors disabled:opacity-50"
+        title="Eliminar categoría"
+      >
+        {isPending ? <Loader2 size={18} className="animate-spin" /> : <Trash2 size={18} />}
+      </button>
+
+      <ConfirmDeleteModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onConfirm={handleConfirmDelete}
+        title="Eliminar Categoría"
+        description="¿Estás seguro de que deseas eliminar esta categoría? Esta acción no se puede deshacer."
+        isLoading={isPending}
+      />
+    </>
   );
 }
 
@@ -99,8 +102,9 @@ export function CategoryTableRow({ category }: { category: { id: string, name: s
       try {
         await updateCategoryAction(category.id, formData);
         setIsEditing(false);
+        toast.success('Categoría actualizada con éxito');
       } catch (err: any) {
-        alert(err.message);
+        toast.error(err.message || 'Error al actualizar la categoría');
       }
     });
   };
