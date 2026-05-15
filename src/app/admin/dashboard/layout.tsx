@@ -11,7 +11,6 @@ export default async function AdminDashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // Solo los admin pueden ver esta sección
   await requireRole([APP_ROLES.ADMIN]);
 
   return (

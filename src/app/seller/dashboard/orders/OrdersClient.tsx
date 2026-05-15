@@ -7,6 +7,7 @@ import { OrderStatus } from '@prisma/client';
 import { ShoppingCart, Filter, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Modal } from '@/components/ui/Modal';
 import { updateOrderStatusAction } from '@/app/actions/order.actions';
+import toast from 'react-hot-toast';
 import { FILTER_TABS } from './order.constants';
 import { OrderRow } from './OrderRow';
 import { OrderDetailModal } from './OrderDetailModal';
@@ -35,7 +36,6 @@ export function OrdersClient({
 
   const [selectedOrder, setSelectedOrder] = useState<SellerOrderView | null>(null);
   const [loadingOrderId, setLoadingOrderId] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
 
   function navigate(newPage: number, newStatus?: string) {
     const params = new URLSearchParams(searchParams.toString());
@@ -56,11 +56,11 @@ export function OrdersClient({
 
   const handleMarkReady = async (orderId: string) => {
     setLoadingOrderId(orderId);
-    setError(null);
     try {
       await updateOrderStatusAction(orderId, OrderStatus.READY);
+      toast.success('Orden marcada como lista exitosamente');
     } catch (err: any) {
-      setError(err.message || 'Error al actualizar la orden');
+      toast.error(err.message || 'Error al actualizar la orden');
     } finally {
       setLoadingOrderId(null);
     }
@@ -83,13 +83,6 @@ export function OrdersClient({
           </p>
         </div>
       </div>
-
-      {/* Error global */}
-      {error && (
-        <div className="mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
-          {error}
-        </div>
-      )}
 
       {/* Filtros */}
       <div className="mb-6">

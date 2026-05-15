@@ -11,4 +11,6 @@ export async function getSeller(): Promise<Seller> {
     if (!seller) throw new Error('Seller no encontrado');
 
     return seller;
-}
+}
+
+

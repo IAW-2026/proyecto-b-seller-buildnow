@@ -6,6 +6,7 @@ import { Category } from '@prisma/client';
 import { Plus, Edit2, Trash2, Package } from 'lucide-react';
 import { Modal } from '@/components/ui/Modal';
 import { createProductAction, updateProductAction, deleteProductAction } from '@/app/actions/product.actions';
+import toast from 'react-hot-toast';
 
 export type SerializedProduct = Omit<ProductWithCategory, 'price' | 'weight'> & {
   price: number;
@@ -22,18 +23,15 @@ export function ProductsClient({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<SerializedProduct | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [productToDelete, setProductToDelete] = useState<string | null>(null);
 
   const openCreateModal = () => {
     setEditingProduct(null);
-    setError(null);
     setIsModalOpen(true);
   };
 
   const openEditModal = (product: SerializedProduct) => {
     setEditingProduct(product);
-    setError(null);
     setIsModalOpen(true);
   };
 
@@ -42,30 +40,46 @@ export function ProductsClient({
     setEditingProduct(null);
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('¿Estás seguro de que deseas eliminar este producto?')) return;
+  const openDeleteModal = (id: string) => setProductToDelete(id);
+  const closeDeleteModal = () => setProductToDelete(null);
+
+  const confirmDelete = async () => {
+    if (!productToDelete) return;
+    setIsLoading(true);
     try {
-      await deleteProductAction(id);
+      await deleteProductAction(productToDelete);
+      toast.success('Producto eliminado exitosamente');
+      closeDeleteModal();
     } catch (err: any) {
-      setDeleteError(err.message);
+      toast.error(err.message || 'Error al eliminar el producto');
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
-    setError(null);
     const formData = new FormData(e.currentTarget);
+
+    const imageFile = formData.get('image') as File | null;
+    if (imageFile && imageFile.size > 4.5 * 1024 * 1024) {
+      toast.error('La imagen excede el límite de 4.5MB');
+      setIsLoading(false);
+      return;
+    }
 
     try {
       if (editingProduct) {
         await updateProductAction(editingProduct.id, formData);
+        toast.success('Producto actualizado exitosamente');
       } else {
         await createProductAction(formData);
+        toast.success('Producto creado exitosamente');
       }
       closeModal();
     } catch (err: any) {
-      setError(err.message || 'Error al guardar el producto');
+      toast.error(err.message || 'Error al guardar el producto');
     } finally {
       setIsLoading(false);
     }
@@ -144,7 +158,7 @@ export function ProductsClient({
                         <Edit2 className="w-4 h-4" />
                       </button>
                       <button
-                        onClick={() => handleDelete(product.id)}
+                        onClick={() => openDeleteModal(product.id)}
                         className="p-2 text-zinc-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
                         title="Eliminar"
                       >
@@ -156,17 +170,6 @@ export function ProductsClient({
               ))}
             </tbody>
           </table>
-          {deleteError && (
-            <div className="mt-4 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500 text-sm flex items-center justify-between">
-              <span>{deleteError}</span>
-              <button
-                onClick={() => setDeleteError(null)}
-                className="ml-4 text-red-400 hover:text-red-600 transition-colors"
-              >
-                ✕
-              </button>
-            </div>
-          )}
         </div>
       </div>
 
@@ -187,6 +190,21 @@ export function ProductsClient({
               className="w-full bg-white border border-zinc-200 rounded-lg px-4 py-2.5 text-zinc-900 placeholder-zinc-400 focus:outline-none focus:border-orange-500 transition-colors"
               placeholder="Ej: Cemento Loma Negra 50kg"
             />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-zinc-700 mb-1">Imagen (Opcional)</label>
+            <input
+              type="file"
+              name="image"
+              accept="image/*"
+              className="w-full bg-white border border-zinc-200 rounded-lg px-4 py-2 text-zinc-900 focus:outline-none focus:border-orange-500 transition-colors file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-600 hover:file:bg-orange-100"
+            />
+            {editingProduct?.img && (
+              <p className="text-xs text-zinc-500 mt-2">
+                El producto ya tiene una imagen asociada. Subir una nueva la reemplazará.
+              </p>
+            )}
           </div>
 
           <div>
@@ -259,12 +277,6 @@ export function ProductsClient({
             </label>
           </div>
 
-          {error && (
-            <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500 text-sm">
-              {error}
-            </div>
-          )}
-
           <div className="pt-4 mt-6 border-t border-zinc-200 flex justify-end gap-3">
             <button
               type="button"
@@ -282,6 +294,37 @@ export function ProductsClient({
             </button>
           </div>
         </form>
+      </Modal>
+
+      <Modal
+        isOpen={!!productToDelete}
+        onClose={closeDeleteModal}
+        title="Eliminar Producto"
+        variant="light"
+      >
+        <div className="space-y-4">
+          <p className="text-zinc-600">
+            ¿Estás seguro de que deseas eliminar este producto? Esta acción no se puede deshacer.
+          </p>
+          <div className="pt-4 mt-6 border-t border-zinc-200 flex justify-end gap-3">
+            <button
+              type="button"
+              onClick={closeDeleteModal}
+              disabled={isLoading}
+              className="px-4 py-2 text-sm font-medium text-zinc-500 hover:text-zinc-900 transition-colors cursor-pointer"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              onClick={confirmDelete}
+              disabled={isLoading}
+              className="px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+            >
+              {isLoading ? 'Eliminando...' : 'Eliminar'}
+            </button>
+          </div>
+        </div>
       </Modal>
     </div>
   );

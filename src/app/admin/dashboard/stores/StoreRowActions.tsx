@@ -5,6 +5,7 @@ import { toggleStoreSuspensionAction } from '@/app/actions/admin.actions';
 import { StoreStatus } from '@prisma/client';
 import Link from 'next/link';
 import { Eye, ShieldAlert, CheckCircle } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 export function StoreRowActions({ storeId, status }: { storeId: string, status: StoreStatus }) {
   const [isPending, startTransition] = useTransition();
@@ -14,9 +15,10 @@ export function StoreRowActions({ storeId, status }: { storeId: string, status: 
     startTransition(async () => {
       try {
         await toggleStoreSuspensionAction(storeId, !isSuspended);
+        toast.success(isSuspended ? "Tienda reactivada con éxito" : "Tienda suspendida con éxito");
       } catch (error) {
         console.error("Error al cambiar estado:", error);
-        alert("Hubo un error al cambiar el estado de la tienda");
+        toast.error("Hubo un error al cambiar el estado de la tienda");
       }
     });
   };

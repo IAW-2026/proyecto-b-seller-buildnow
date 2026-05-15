@@ -16,7 +16,7 @@ import {
   AlertCircle,
   CheckCircle2,
 } from 'lucide-react';
-import { registerSeller } from '@/app/actions/register.actions';
+import { registerSeller } from '@/app/actions/auth.actions';
 
 type Step = 'personal' | 'store';
 

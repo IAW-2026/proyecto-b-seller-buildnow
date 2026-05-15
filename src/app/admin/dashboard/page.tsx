@@ -5,6 +5,7 @@ import { PrismaOrderRepository } from '@/infrastructure/repositories/prisma/Pris
 import { PrismaProductRepository } from '@/infrastructure/repositories/prisma/PrismaProductRepository';
 import { Store, ShoppingCart, TrendingUp, Package } from 'lucide-react';
 import { OrderStatus, StoreStatus } from '@prisma/client';
+import { MetricCard } from '@/components/ui/MetricCard';
 
 export default async function AdminDashboardPage() {
   await requireRole([APP_ROLES.ADMIN]);
@@ -53,22 +54,4 @@ export default async function AdminDashboardPage() {
     </div>
   );
 }
-
-function MetricCard({ title, value, subtitle, icon }: { title: string, value: string, subtitle: string, icon: React.ReactNode }) {
-  return (
-    <div className="group rounded-xl border border-zinc-200 bg-white p-6 shadow-sm hover:shadow-md transition-all duration-200 relative overflow-hidden">
-      <div className="relative z-10 flex items-start justify-between">
-        <div>
-          <p className="text-sm font-medium text-zinc-500">{title}</p>
-          <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-3xl font-bold text-zinc-900 tracking-tight">{value}</span>
-          </div>
-          <p className="mt-1 text-xs text-zinc-500">{subtitle}</p>
-        </div>
-        <div className="rounded-lg bg-zinc-50 p-2 ring-1 ring-zinc-100 group-hover:bg-white transition-colors">
-          {icon}
-        </div>
-      </div>
-    </div>
-  );
-}
+

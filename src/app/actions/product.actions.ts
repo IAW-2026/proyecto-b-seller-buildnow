@@ -6,6 +6,7 @@ import { getSellerContext } from '@/core/auth/getSellerContext';
 import { APP_ROLES } from '@/core/auth/roles';
 import { Prisma } from '@prisma/client';
 import { PrismaProductRepository } from '@/infrastructure/repositories/prisma/PrismaProductRepository';
+import { put, del } from '@vercel/blob';
 
 export async function createProductAction(formData: FormData) {
   await requireRole([APP_ROLES.SELLER]);
@@ -22,6 +23,17 @@ export async function createProductAction(formData: FormData) {
     throw new Error('Faltan campos obligatorios o hay campos con formato incorrecto');
   }
 
+  const imageFile = formData.get('image') as File | null;
+  let imgUrl: string | null = null;
+
+  if (imageFile && imageFile.size > 0) {
+    if (imageFile.size > 4.5 * 1024 * 1024) {
+      throw new Error('La imagen excede el límite de 4.5MB');
+    }
+    const blob = await put(imageFile.name, imageFile, { access: 'public' });
+    imgUrl = blob.url;
+  }
+
   const productRepo = new PrismaProductRepository();
   await productRepo.create({
     name,
@@ -31,7 +43,7 @@ export async function createProductAction(formData: FormData) {
     weight: new Prisma.Decimal(weight),
     available,
     storeId: seller.storeId,
-    img: null,
+    img: imgUrl,
   });
 
   revalidatePath('/seller/dashboard/products');
@@ -59,6 +71,26 @@ export async function updateProductAction(productId: string, formData: FormData)
     throw new Error('Faltan campos obligatorios o hay campos con formato incorrecto');
   }
 
+  const imageFile = formData.get('image') as File | null;
+  let imgUrl = existingProduct.img;
+
+  if (imageFile && imageFile.size > 0) {
+    if (imageFile.size > 4.5 * 1024 * 1024) {
+      throw new Error('La imagen excede el límite de 4.5MB');
+    }
+    const blob = await put(imageFile.name, imageFile, { access: 'public' });
+    imgUrl = blob.url;
+
+    // Eliminar la imagen vieja si existía
+    if (existingProduct.img) {
+      try {
+        await del(existingProduct.img);
+      } catch (err) {
+        console.error('Error al borrar la imagen anterior de Vercel Blob:', err);
+      }
+    }
+  }
+
   await productRepo.update(productId, {
     name,
     categoryId,
@@ -66,6 +98,7 @@ export async function updateProductAction(productId: string, formData: FormData)
     stock,
     weight: new Prisma.Decimal(weight),
     available,
+    ...(imgUrl !== existingProduct.img && { img: imgUrl }),
   });
 
   revalidatePath('/seller/dashboard/products');
@@ -80,6 +113,14 @@ export async function deleteProductAction(productId: string) {
   const existingProduct = await productRepo.findById(productId);
   if (!existingProduct || existingProduct.storeId !== seller.storeId) {
     throw new Error('Producto no encontrado o no tenés permisos para borrarlo');
+  }
+
+  if (existingProduct.img) {
+    try {
+      await del(existingProduct.img);
+    } catch (err) {
+      console.error('Error al borrar la imagen de Vercel Blob al eliminar producto:', err);
+    }
   }
 
   await productRepo.delete(productId);

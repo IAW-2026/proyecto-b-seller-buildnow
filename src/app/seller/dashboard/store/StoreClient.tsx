@@ -2,34 +2,31 @@
 
 import { useState } from 'react';
 import { Store, StoreStatus } from '@prisma/client';
-import { Store as StoreIcon, Save, Info } from 'lucide-react';
+import { Store as StoreIcon, Save } from 'lucide-react';
 import { updateStoreAction } from '@/app/actions/store.actions';
+import toast from 'react-hot-toast';
 
 export function StoreClient({ store }: { store: Store }) {
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
-    setError(null);
-    setSuccessMsg(null);
 
     const formData = new FormData(e.currentTarget);
 
     try {
       await updateStoreAction(store.id, formData);
-      setSuccessMsg('Información de la tienda actualizada correctamente.');
+      toast.success('Información de la tienda actualizada correctamente.');
     } catch (err: any) {
-      setError(err.message || 'Ocurrió un error al actualizar la tienda.');
+      toast.error(err.message || 'Ocurrió un error al actualizar la tienda.');
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="max-w-3xl">
+    <div className="max-w-3xl mx-auto">
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-zinc-900 flex items-center gap-2">
           <StoreIcon className="w-6 h-6 text-orange-500" />
@@ -41,13 +38,6 @@ export function StoreClient({ store }: { store: Store }) {
       </div>
 
       <div className="bg-white border border-zinc-200 rounded-xl overflow-hidden shadow-sm p-6">
-        {successMsg && (
-          <div className="mb-6 p-4 rounded-lg bg-green-500/10 border border-green-500/20 text-green-400 flex items-start gap-3">
-            <Info className="w-5 h-5 flex-shrink-0 mt-0.5" />
-            <p className="text-sm font-medium">{successMsg}</p>
-          </div>
-        )}
-
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
             <label className="block text-sm font-medium text-zinc-700 mb-1">
@@ -107,12 +97,6 @@ export function StoreClient({ store }: { store: Store }) {
               <option value={StoreStatus.CLOSE}>Cerrada (Pausar atención)</option>
             </select>
           </div>
-
-          {error && (
-            <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500 text-sm">
-              {error}
-            </div>
-          )}
 
           <div className="pt-4 border-t border-zinc-200 flex justify-end">
             <button

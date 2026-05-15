@@ -10,7 +10,7 @@ export async function GET() {
   try {
     let isAdmin = false;
     const { userId } = await auth();
-    
+
     if (userId) {
       const client = await clerkClient();
       const user = await client.users.getUser(userId);
@@ -21,9 +21,8 @@ export async function GET() {
 
     const stores = await storeRepo.findAll();
 
-    // Si no es admin (ej. buyer), filtramos las SUSPENDED
-    const filteredStores = isAdmin 
-      ? stores 
+    const filteredStores = isAdmin
+      ? stores
       : stores.filter(store => store.status !== 'SUSPENDED');
 
     const response = filteredStores.map(store => ({
