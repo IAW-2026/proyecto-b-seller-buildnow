@@ -14,9 +14,9 @@ export default async function OrdersPage({
   searchParams: Promise<{ page?: string; status?: string }>;
 }) {
   await requireRole([APP_ROLES.SELLER]);
+
   const { userId } = await auth();
   if (!userId) redirect('/sign-in');
-
   const sellerRepo = new PrismaSellerRepository();
   const seller = await sellerRepo.findById(userId);
   if (!seller || !seller.storeId) redirect('/sign-in');

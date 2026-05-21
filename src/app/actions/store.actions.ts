@@ -14,7 +14,6 @@ import { getSeller } from './seller.actions';
 export async function createStoreAction(formData: FormData) {
   const { userId } = await auth();
 
-
   if (!userId) {
     throw new Error('No autorizado');
   }
@@ -63,6 +62,10 @@ export async function updateStoreAction(storeId: string, formData: FormData) {
 
   if (!name || !address || !status) {
     throw new Error('El nombre, dirección y estado son obligatorios');
+  }
+  const VALID_STATUSES: StoreStatus[] = ["OPEN", "CLOSE"];
+  if (!VALID_STATUSES.includes(status)) {
+    throw new Error('Estado inválido');
   }
 
   const storeRepo = new PrismaStoreRepository();

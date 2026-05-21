@@ -39,7 +39,6 @@ export class PrismaOrderRepository implements IOrderRepository {
   }
 
   private async expireStaleOrders(storeId: string): Promise<void> {
-
     const cutoff = new Date(Date.now() - MINUTOS_TO_WAIT_BEFORE_DELETE * 60 * 1000);
 
     const stale = await prisma.order.findMany({
@@ -55,20 +54,23 @@ export class PrismaOrderRepository implements IOrderRepository {
 
     const staleIds = stale.map((o) => o.id);
 
+    const stockToRestore = new Map<string, number>();
+    for (const order of stale) {
+      for (const item of order.items) {
+        const current = stockToRestore.get(item.productId) ?? 0;
+        stockToRestore.set(item.productId, current + item.quantity);
+      }
+    }
+
     await prisma.$transaction(async (tx) => {
-      for (const order of stale) {
-        for (const item of order.items) {
-          const updated = await tx.product.update({
-            where: { id: item.productId },
-            data: { stock: { increment: item.quantity } },
-          });
-          if (updated.stock > 0) {
-            await tx.product.update({
-              where: { id: item.productId },
-              data: { available: true },
-            });
-          }
-        }
+      for (const [productId, quantity] of stockToRestore) {
+        await tx.product.update({
+          where: { id: productId },
+          data: {
+            stock: { increment: quantity },
+            available: true,
+          },
+        });
       }
 
       await tx.orderItem.deleteMany({ where: { orderId: { in: staleIds } } });
@@ -123,6 +125,43 @@ export class PrismaOrderRepository implements IOrderRepository {
       pageSize,
       totalPages: Math.ceil(total / pageSize),
     };
+  }
+
+  async findPendingsPaymentsByStore(storeId: string): Promise<SellerOrderView[]> {
+    await this.expireStaleOrders(storeId);
+
+    const orders = await prisma.order.findMany({
+      where: {
+        storeId,
+        status: {
+          in: [OrderStatus.PENDING_PAYMENT, OrderStatus.CONFIRMED],
+        },
+      },
+      include: {
+        items: {
+          include: { product: true },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return orders.map(order => ({
+      id: order.id,
+      buyerId: order.buyerId,
+      status: order.status,
+      totalAmount: Number(order.totalAmount),
+      totalWeight: Number(order.totalWeight),
+      deliveryAddress: order.deliveryAddress,
+      items: order.items.map(item => ({
+        id: item.id,
+        productId: item.productId,
+        productName: item.product.name,
+        quantity: item.quantity,
+        price: Number(item.price),
+      })),
+      createdAt: order.createdAt.toISOString(),
+      updatedAt: order.updatedAt.toISOString(),
+    }));
   }
 
   async findReadyOrders(): Promise<ReadyOrderView[]> {

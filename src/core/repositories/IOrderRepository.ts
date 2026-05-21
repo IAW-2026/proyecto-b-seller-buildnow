@@ -72,6 +72,7 @@ export interface IOrderRepository {
   findAll(page?: number, pageSize?: number): Promise<PaginatedAdminOrders>;
   findById(id: string): Promise<Order | null>;
   findByStore(storeId: string, page?: number, pageSize?: number, status?: string): Promise<PaginatedOrders>;
+  findPendingsPaymentsByStore(storeId: string): Promise<SellerOrderView[]>;
   findReadyOrders(): Promise<ReadyOrderView[]>;
   createWithItemsAndUpdateStock(data: CreateOrderWithStockInput): Promise<Order>;
   updateStatus(id: string, status: OrderStatus): Promise<Order>;

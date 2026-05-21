@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { PrismaStoreRepository } from '../../../infrastructure/repositories/prisma/PrismaStoreRepository';
 import { getSellerContext } from '@/core/auth/getSellerContext';
 import { auth, clerkClient } from '@clerk/nextjs/server';
@@ -6,8 +6,12 @@ import { APP_ROLES } from '@/core/auth/roles';
 
 const storeRepo = new PrismaStoreRepository();
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    const searchParams = request.nextUrl.searchParams;
+    const pageNumber = parseInt(searchParams.get('pageNumber') || '1', 10);
+    const pageSize = parseInt(searchParams.get('pageSize') || '10', 10);
+
     let isAdmin = false;
     const { userId } = await auth();
 
@@ -19,13 +23,13 @@ export async function GET() {
       }
     }
 
-    const stores = await storeRepo.findAll();
+    const result = await storeRepo.findPaginated({
+      pageNumber,
+      pageSize,
+      isAdmin,
+    });
 
-    const filteredStores = isAdmin
-      ? stores
-      : stores.filter(store => store.status !== 'SUSPENDED');
-
-    const response = filteredStores.map(store => ({
+    const data = result.data.map(store => ({
       id: store.id,
       name: store.name,
       description: store.description,
@@ -33,7 +37,13 @@ export async function GET() {
       status: store.status,
     }));
 
-    return NextResponse.json(response);
+    return NextResponse.json({
+      data,
+      total: result.total,
+      page: result.page,
+      pageSize: result.pageSize,
+      totalPages: result.totalPages
+    });
   } catch (error) {
     console.error('Error obteniendo tiendas:', error);
     return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });

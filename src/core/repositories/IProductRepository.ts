@@ -11,6 +11,10 @@ export interface SearchProductsOptions {
   pageSize: number;
 }
 
+export interface SearchStoreProductsOptions extends SearchProductsOptions {
+  storeId: string;
+}
+
 export interface PaginatedProducts {
   data: ProductWithCategory[];
   total: number;
@@ -26,6 +30,7 @@ export interface IProductRepository {
   findByCategory(categoryId: string): Promise<ProductWithCategory[]>;
   findAll(categoryId?: string): Promise<ProductWithCategory[]>;
   findPaginated(options: SearchProductsOptions): Promise<PaginatedProducts>;
+  findPaginatedByStore(options: SearchStoreProductsOptions): Promise<PaginatedProducts>;
   findManyByIds(ids: string[]): Promise<Product[]>;
   create(data: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>): Promise<Product>;
   update(id: string, data: Partial<Product>): Promise<Product>;

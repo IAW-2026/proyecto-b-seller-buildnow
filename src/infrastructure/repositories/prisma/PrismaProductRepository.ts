@@ -1,5 +1,5 @@
 import prisma from '../../db/prisma';
-import { IProductRepository, ProductWithCategory, SearchProductsOptions, PaginatedProducts } from '../../../core/repositories/IProductRepository';
+import { IProductRepository, ProductWithCategory, SearchProductsOptions, SearchStoreProductsOptions, PaginatedProducts } from '../../../core/repositories/IProductRepository';
 import { Product, Prisma } from '@prisma/client';
 
 export class PrismaProductRepository implements IProductRepository {
@@ -89,6 +89,42 @@ export class PrismaProductRepository implements IProductRepository {
     };
   }
 
+  async findPaginatedByStore(options: SearchStoreProductsOptions): Promise<PaginatedProducts> {
+    const { storeId, categoryId, search, pageNumber, pageSize } = options;
+    const skip = (pageNumber - 1) * pageSize;
+    const take = pageSize;
+
+    const where: Prisma.ProductWhereInput = { storeId };
+
+    if (categoryId) {
+      where.categoryId = categoryId;
+    }
+
+    if (search) {
+      where.name = { contains: search, mode: 'insensitive' };
+    }
+
+    const [total, products] = await Promise.all([
+      prisma.product.count({ where }),
+      prisma.product.findMany({
+        where,
+        skip,
+        take,
+        include: { category: true },
+        orderBy: { createdAt: 'desc' }
+      })
+    ]);
+
+    const data = products.map(p => ({ ...p, categoryName: p.category.name }));
+
+    return {
+      data,
+      total,
+      page: pageNumber,
+      pageSize,
+      totalPages: Math.ceil(total / pageSize)
+    };
+  }
   async findManyByIds(ids: string[]): Promise<Product[]> {
     return prisma.product.findMany({ where: { id: { in: ids } } });
   }

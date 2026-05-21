@@ -8,6 +8,53 @@ import { Prisma } from '@prisma/client';
 import { PrismaProductRepository } from '@/infrastructure/repositories/prisma/PrismaProductRepository';
 import { put, del } from '@vercel/blob';
 
+export async function searchStoreProductsAction(params: {
+  storeId: string;
+  categoryId?: string;
+  search?: string;
+  pageNumber: number;
+  pageSize: number;
+}) {
+  await requireRole([APP_ROLES.SELLER]);
+  const { seller } = await getSellerContext();
+
+
+  if (seller.storeId !== params.storeId) {
+    throw new Error('No tenés permisos para acceder a esta tienda');
+  }
+
+  const productRepo = new PrismaProductRepository();
+  const result = await productRepo.findPaginatedByStore({
+    storeId: params.storeId,
+    categoryId: params.categoryId,
+    search: params.search,
+    pageNumber: params.pageNumber,
+    pageSize: params.pageSize,
+  });
+
+  const data = result.data.map(product => ({
+    id: product.id,
+    img: product.img,
+    storeId: product.storeId,
+    categoryId: product.categoryId,
+    categoryName: product.categoryName,
+    name: product.name,
+    price: Number(product.price),
+    stock: product.stock,
+    weight: Number(product.weight),
+    available: product.available,
+    createdAt: product.createdAt,
+    updatedAt: product.updatedAt,
+  }));
+
+  return {
+    data,
+    total: result.total,
+    page: result.page,
+    pageSize: result.pageSize,
+    totalPages: result.totalPages,
+  };
+}
 export async function createProductAction(formData: FormData) {
   await requireRole([APP_ROLES.SELLER]);
   const { seller } = await getSellerContext();
@@ -24,15 +71,7 @@ export async function createProductAction(formData: FormData) {
   }
 
   const imageFile = formData.get('image') as File | null;
-  let imgUrl: string | null = null;
-
-  if (imageFile && imageFile.size > 0) {
-    if (imageFile.size > 4.5 * 1024 * 1024) {
-      throw new Error('La imagen excede el límite de 4.5MB');
-    }
-    const blob = await put(imageFile.name, imageFile, { access: 'public' });
-    imgUrl = blob.url;
-  }
+  const imgUrl = await handleImageUpload(imageFile);
 
   const productRepo = new PrismaProductRepository();
   await productRepo.create({
@@ -72,24 +111,13 @@ export async function updateProductAction(productId: string, formData: FormData)
   }
 
   const imageFile = formData.get('image') as File | null;
-  let imgUrl = existingProduct.img;
+  const newImgUrl = await handleImageUpload(imageFile);
 
-  if (imageFile && imageFile.size > 0) {
-    if (imageFile.size > 4.5 * 1024 * 1024) {
-      throw new Error('La imagen excede el límite de 4.5MB');
-    }
-    const blob = await put(imageFile.name, imageFile, { access: 'public' });
-    imgUrl = blob.url;
-
-    // Eliminar la imagen vieja si existía
-    if (existingProduct.img) {
-      try {
-        await del(existingProduct.img);
-      } catch (err) {
-        console.error('Error al borrar la imagen anterior de Vercel Blob:', err);
-      }
-    }
+  if (newImgUrl && existingProduct.img) {
+    await handleDeleteOldImage(existingProduct.img);
   }
+
+  const imgUrl = newImgUrl || existingProduct.img;
 
   await productRepo.update(productId, {
     name,
@@ -115,15 +143,31 @@ export async function deleteProductAction(productId: string) {
     throw new Error('Producto no encontrado o no tenés permisos para borrarlo');
   }
 
-  if (existingProduct.img) {
-    try {
-      await del(existingProduct.img);
-    } catch (err) {
-      console.error('Error al borrar la imagen de Vercel Blob al eliminar producto:', err);
-    }
-  }
+  await handleDeleteOldImage(existingProduct.img);
 
   await productRepo.delete(productId);
 
   revalidatePath('/seller/dashboard/products');
+}
+
+// Funciones auxiliares para manejo de imágenes
+async function handleImageUpload(imageFile: File | null): Promise<string | null> {
+  if (!imageFile || imageFile.size === 0) return null;
+
+  if (imageFile.size > 4.5 * 1024 * 1024) {
+    throw new Error('La imagen excede el límite de 4.5MB');
+  }
+
+  const blob = await put(imageFile.name, imageFile, { access: 'public' });
+  return blob.url;
+}
+
+async function handleDeleteOldImage(imageUrl: string | null) {
+  if (!imageUrl) return;
+
+  try {
+    await del(imageUrl);
+  } catch (err) {
+    console.error('Error al borrar la imagen de Vercel Blob:', err);
+  }
 }

@@ -1,10 +1,44 @@
 import prisma from '../../db/prisma';
-import { IStoreRepository } from '../../../core/repositories/IStoreRepository';
-import { Store } from '@prisma/client';
+import { IStoreRepository, SearchStoresOptions, PaginatedStores } from '../../../core/repositories/IStoreRepository';
+import { Store, Prisma } from '@prisma/client';
 
 export class PrismaStoreRepository implements IStoreRepository {
   async findAll(): Promise<Store[]> {
     return prisma.store.findMany();
+  }
+
+  async findPaginated(options: SearchStoresOptions): Promise<PaginatedStores> {
+    const { pageNumber, pageSize, isAdmin } = options;
+    const skip = (pageNumber - 1) * pageSize;
+    const take = pageSize;
+
+    let where: Prisma.StoreWhereInput = {};
+
+    if (!isAdmin) {
+      where = {
+        status: {
+          not: 'SUSPENDED'
+        }
+      };
+    }
+
+    const [total, stores] = await Promise.all([
+      prisma.store.count({ where }),
+      prisma.store.findMany({
+        where,
+        skip,
+        take,
+        orderBy: { createdAt: 'desc' }
+      })
+    ]);
+
+    return {
+      data: stores,
+      total,
+      page: pageNumber,
+      pageSize,
+      totalPages: Math.ceil(total / pageSize)
+    };
   }
 
   async findById(id: string): Promise<Store | null> {

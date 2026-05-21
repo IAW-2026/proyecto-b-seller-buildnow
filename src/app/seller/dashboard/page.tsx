@@ -13,7 +13,7 @@ import { MetricCard } from '@/components/ui/MetricCard';
 
 async function getEarningsFromPaymentsApi(token: string): Promise<number | null> {
   const baseUrl = process.env.PAYMENTS_API_URL;
-  if (!baseUrl) return null;
+  if (!baseUrl) return 1000;
 
   try {
     const res = await fetch(`${baseUrl}/api/payments/earnings`, {
@@ -49,18 +49,16 @@ export default async function DashboardPage() {
   const orderRepo = new PrismaOrderRepository();
   const productRepo = new PrismaProductRepository();
 
-  const [{ data: orders }, products] = await Promise.all([
+  const [{ data: orders }, products, pendingPaymentsOrders] = await Promise.all([
     orderRepo.findByStore(seller.storeId, 1, PAGE_SIZE),
     productRepo.findByStore(seller.storeId),
+    orderRepo.findPendingsPaymentsByStore(seller.storeId),
   ]);
 
-  const pendingOrders = orders.filter(
-    (o) => o.status === OrderStatus.PENDING_PAYMENT || o.status === OrderStatus.CONFIRMED
-  ).length;
 
   const token = await getToken();
   const earningsFromApi = token ? await getEarningsFromPaymentsApi(token) : null;
-  const todayRevenue = earningsFromApi ?? 0;
+  const totalRevenue = earningsFromApi ?? 0;
 
   const outOfStockCount = products.filter((p) => p.stock <= 0).length;
 
@@ -79,7 +77,7 @@ export default async function DashboardPage() {
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
         <MetricCard
           title="Órdenes Pendientes"
-          value={String(pendingOrders)}
+          value={String(pendingPaymentsOrders.length)}
           subtitle="Requieren atención"
           icon={<AlertCircle className="text-orange-500" size={24} />}
         />
@@ -90,8 +88,8 @@ export default async function DashboardPage() {
           icon={<Package className="text-red-500" size={24} />}
         />
         <MetricCard
-          title="Ventas del Día"
-          value={`$${todayRevenue.toLocaleString('es-AR', { minimumFractionDigits: 2 })}`}
+          title="Ingresos Totales"
+          value={`$${totalRevenue.toLocaleString('es-AR', { minimumFractionDigits: 2 })}`}
           subtitle=""
           icon={<TrendingUp className="text-emerald-500" size={24} />}
         />

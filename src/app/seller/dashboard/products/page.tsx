@@ -6,6 +6,7 @@ import { PrismaSellerRepository } from '@/infrastructure/repositories/prisma/Pri
 import { PrismaProductRepository } from '@/infrastructure/repositories/prisma/PrismaProductRepository';
 import { PrismaCategoryRepository } from '@/infrastructure/repositories/prisma/PrismaCategoryRepository';
 import { ProductsClient } from './ProductsClient';
+import { PAGE_SIZE } from '@/core/config/pagination';
 
 export default async function ProductsPage() {
   await requireRole([APP_ROLES.SELLER]);
@@ -19,12 +20,16 @@ export default async function ProductsPage() {
   const productRepo = new PrismaProductRepository();
   const categoryRepo = new PrismaCategoryRepository();
 
-  const [products, categories] = await Promise.all([
-    productRepo.findByStore(seller.storeId),
+  const [paginatedResult, categories] = await Promise.all([
+    productRepo.findPaginatedByStore({
+      storeId: seller.storeId,
+      pageNumber: 1,
+      pageSize: PAGE_SIZE,
+    }),
     categoryRepo.findAll(),
   ]);
 
-  const serializedProducts = products.map((p) => ({
+  const serializedProducts = paginatedResult.data.map((p) => ({
     ...p,
     price: Number(p.price),
     weight: Number(p.weight),
@@ -32,7 +37,17 @@ export default async function ProductsPage() {
 
   return (
     <div className="p-8 max-w-7xl mx-auto">
-      <ProductsClient products={serializedProducts} categories={categories} />
+      <ProductsClient
+        initialProducts={serializedProducts}
+        categories={categories}
+        storeId={seller.storeId}
+        initialPagination={{
+          total: paginatedResult.total,
+          page: paginatedResult.page,
+          pageSize: paginatedResult.pageSize,
+          totalPages: paginatedResult.totalPages,
+        }}
+      />
     </div>
   );
 }
