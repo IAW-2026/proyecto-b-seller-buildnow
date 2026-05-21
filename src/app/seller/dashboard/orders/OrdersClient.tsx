@@ -4,14 +4,13 @@ import { useState, useTransition } from 'react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { SellerOrderView } from '@/core/repositories/IOrderRepository';
 import { OrderStatus } from '@prisma/client';
-import { ShoppingCart, Filter } from 'lucide-react';
+import { ShoppingCart } from 'lucide-react';
 import { Modal } from '@/components/ui/Modal';
-import { Pagination } from '@/components/ui/Pagination';
 import { updateOrderStatusAction } from '@/app/actions/order.actions';
 import toast from 'react-hot-toast';
-import { FILTER_TABS } from './order.constants';
-import { OrderRow } from './OrderRow';
 import { OrderDetailModal } from './OrderDetailModal';
+import { OrderFilters } from './OrderFilters';
+import { OrdersTable } from './OrdersTable';
 
 interface OrdersClientProps {
   orders: SellerOrderView[];
@@ -67,9 +66,6 @@ export function OrdersClient({
     }
   };
 
-  const start = (page - 1) * pageSize + 1;
-  const end = Math.min(page * pageSize, total);
-
   return (
     <div className={isPending ? 'opacity-60 pointer-events-none transition-opacity' : ''}>
       {/* Encabezado */}
@@ -85,86 +81,23 @@ export function OrdersClient({
         </div>
       </div>
 
-      {/* Filtros */}
-      <div className="mb-6">
-        <div className="flex items-center gap-2 mb-3">
-          <Filter className="w-4 h-4 text-zinc-500" />
-          <span className="text-sm text-zinc-500 font-medium">Filtrar por estado</span>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {FILTER_TABS.map((tab) => {
-            const isActive = activeStatus === tab.key;
-            return (
-              <button
-                key={tab.key}
-                onClick={() => handleFilterChange(tab.key)}
-                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer ${isActive
-                    ? 'bg-orange-600 text-white shadow-lg shadow-orange-500/20'
-                    : 'bg-white border border-zinc-200 text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900'
-                  }`}
-              >
-                {tab.label}
-              </button>
-            );
-          })}
-        </div>
-      </div>
+      <OrderFilters
+        activeStatus={activeStatus}
+        onFilterChange={handleFilterChange}
+      />
 
-      {/* Tabla de Órdenes */}
-      <div className="bg-white border border-zinc-200 rounded-xl overflow-hidden shadow-sm">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-zinc-600">
-            <thead className="bg-zinc-50 border-b border-zinc-200 text-sm uppercase text-zinc-500">
-              <tr>
-                <th className="px-6 py-4 font-medium">Referencia</th>
-                <th className="px-6 py-4 font-medium">Estado</th>
-                <th className="px-6 py-4 font-medium">Items</th>
-                <th className="px-6 py-4 font-medium">Monto</th>
-                <th className="px-6 py-4 font-medium">Dirección</th>
-                <th className="px-6 py-4 font-medium">Fecha</th>
-                <th className="px-6 py-4 font-medium text-right">Acciones</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-zinc-100">
-              {orders.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="px-6 py-12 text-center">
-                    <div className="flex flex-col items-center">
-                      <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-zinc-100 mb-3">
-                        <ShoppingCart className="text-zinc-400" size={24} />
-                      </div>
-                      <p className="text-zinc-900 font-medium">No hay órdenes</p>
-                      <p className="text-zinc-500 text-sm mt-1">
-                        {activeStatus === 'ALL'
-                          ? 'Tu corralón aún no recibió pedidos.'
-                          : `No hay órdenes con el estado "${FILTER_TABS.find(t => t.key === activeStatus)?.label}".`}
-                      </p>
-                    </div>
-                  </td>
-                </tr>
-              ) : null}
-
-              {orders.map((order) => (
-                <OrderRow
-                  key={order.id}
-                  order={order}
-                  isLoading={loadingOrderId === order.id}
-                  onViewDetail={setSelectedOrder}
-                  onMarkReady={handleMarkReady}
-                />
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        <Pagination 
-          page={page} 
-          totalPages={totalPages} 
-          total={total} 
-          pageSize={pageSize} 
-          onPageChange={newPage => navigate(newPage)}
-        />
-      </div>
+      <OrdersTable
+        orders={orders}
+        activeStatus={activeStatus}
+        page={page}
+        totalPages={totalPages}
+        total={total}
+        pageSize={pageSize}
+        loadingOrderId={loadingOrderId}
+        onViewDetail={setSelectedOrder}
+        onMarkReady={handleMarkReady}
+        onPageChange={newPage => navigate(newPage)}
+      />
 
       {/* Modal de Detalle */}
       <Modal

@@ -8,16 +8,14 @@ import { OrderStatus, StoreStatus } from '@prisma/client';
 import { MetricCard } from '@/components/ui/MetricCard';
 
 export default async function AdminDashboardPage() {
-  await requireRole([APP_ROLES.ADMIN]);
-
   const storeRepo = new PrismaStoreRepository();
   const orderRepo = new PrismaOrderRepository();
   const productRepo = new PrismaProductRepository();
 
-  const [stores, orders, products] = await Promise.all([
+  const [stores, totalOrders, totalProducts] = await Promise.all([
     storeRepo.findAll(),
-    orderRepo.findAll(),
-    productRepo.findAll()
+    orderRepo.countAll(),
+    productRepo.countAll()
   ]);
 
   const activeStores = stores.filter((s: { status: StoreStatus }) => s.status === StoreStatus.OPEN || s.status === StoreStatus.CLOSE).length;
@@ -39,13 +37,13 @@ export default async function AdminDashboardPage() {
         />
         <MetricCard
           title="Órdenes (Global)"
-          value={String(orders.total)}
+          value={String(totalOrders)}
           subtitle="Total histórico procesado"
           icon={<ShoppingCart className="text-orange-500" size={24} />}
         />
         <MetricCard
           title="Productos (Global)"
-          value={String(products.length)}
+          value={String(totalProducts)}
           subtitle="En la plataforma global"
           icon={<Package className="text-emerald-500" size={24} />}
         />

@@ -13,15 +13,6 @@ export type CreateOrderInput = {
   }[];
 };
 
-// Extiende CreateOrderInput con la cantidad original para poder
-// descontar el stock de cada producto en la misma transacción.
-export type CreateOrderWithStockInput = CreateOrderInput & {
-  itemsWithQuantity: {
-    productId: string;
-    quantity: number;
-  }[];
-};
-
 export type OrderItemDetail = {
   id: string;
   productId: string;
@@ -69,11 +60,12 @@ export type PaginatedAdminOrders = {
 };
 
 export interface IOrderRepository {
-  findAll(page?: number, pageSize?: number): Promise<PaginatedAdminOrders>;
+  findAll(page?: number, pageSize?: number, storeId?: string): Promise<PaginatedAdminOrders>;
+  countAll(): Promise<number>;
   findById(id: string): Promise<Order | null>;
   findByStore(storeId: string, page?: number, pageSize?: number, status?: string): Promise<PaginatedOrders>;
   findPendingsPaymentsByStore(storeId: string): Promise<SellerOrderView[]>;
   findReadyOrders(): Promise<ReadyOrderView[]>;
-  createWithItemsAndUpdateStock(data: CreateOrderWithStockInput): Promise<Order>;
+  createWithItemsAndUpdateStock(data: CreateOrderInput): Promise<Order>;
   updateStatus(id: string, status: OrderStatus): Promise<Order>;
 }

@@ -1,18 +1,15 @@
-import { requireRole } from '@/core/auth/auth';
-import { APP_ROLES } from '@/core/auth/roles';
 import { PrismaCategoryRepository } from '@/infrastructure/repositories/prisma/PrismaCategoryRepository';
 import { CategoryCreateForm, CategoryTableRow } from './CategoryClient';
 import { Tags } from 'lucide-react';
 
 export default async function AdminCategoriesPage() {
-  await requireRole([APP_ROLES.ADMIN]);
 
   const categoryRepo = new PrismaCategoryRepository();
   const categories = await categoryRepo.findAll();
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      
+
       <div>
         <h2 className="text-2xl font-bold tracking-tight text-zinc-900">Categorías Globales</h2>
         <p className="text-zinc-500 mt-1">

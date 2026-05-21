@@ -49,6 +49,10 @@ export class PrismaProductRepository implements IProductRepository {
     return products.map(p => ({ ...p, categoryName: p.category.name }));
   }
 
+  async countAll(): Promise<number> {
+    return prisma.product.count();
+  }
+
   async findPaginated(options: SearchProductsOptions): Promise<PaginatedProducts> {
     const { categoryId, search, pageNumber, pageSize } = options;
     const skip = (pageNumber - 1) * pageSize;

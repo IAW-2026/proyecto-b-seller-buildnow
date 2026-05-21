@@ -12,13 +12,10 @@ export default async function AdminStoreDetailPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  await requireRole([APP_ROLES.ADMIN]);
-
   const { id } = await params;
 
   const storeRepo = new PrismaStoreRepository();
   const productRepo = new PrismaProductRepository();
-  const orderRepo = new PrismaOrderRepository();
 
   const store = await storeRepo.findById(id);
 
@@ -26,11 +23,7 @@ export default async function AdminStoreDetailPage({
     notFound();
   }
 
-  const [products, orders] = await Promise.all([
-    productRepo.findByStore(id),
-    orderRepo.findByStore(id)
-  ]);
-
+  const products = await productRepo.findByStore(id);
   const isSuspended = store.status === 'SUSPENDED';
 
   return (

@@ -1,15 +1,17 @@
 import prisma from '../../db/prisma';
-import { IOrderRepository, CreateOrderInput, CreateOrderWithStockInput, PaginatedOrders, ReadyOrderView, SellerOrderView, PaginatedAdminOrders } from '../../../core/repositories/IOrderRepository';
+import { IOrderRepository, CreateOrderInput, PaginatedOrders, ReadyOrderView, SellerOrderView, PaginatedAdminOrders } from '../../../core/repositories/IOrderRepository';
 import { Order, OrderStatus } from '@prisma/client';
 
 const MINUTOS_TO_WAIT_BEFORE_DELETE = 20;
 
 export class PrismaOrderRepository implements IOrderRepository {
-  async findAll(page = 1, pageSize = 10): Promise<PaginatedAdminOrders> {
+  async findAll(page = 1, pageSize = 10, storeId?: string): Promise<PaginatedAdminOrders> {
     const skip = (page - 1) * pageSize;
+    const where = storeId ? { storeId } : {};
 
     const [orders, total] = await Promise.all([
       prisma.order.findMany({
+        where,
         orderBy: { createdAt: 'desc' },
         include: {
           store: {
@@ -19,16 +21,20 @@ export class PrismaOrderRepository implements IOrderRepository {
         skip,
         take: pageSize,
       }),
-      prisma.order.count(),
+      prisma.order.count({ where }),
     ]);
 
     return {
-      data: orders as any, // Prisma types are sometimes strict about includes
+      data: orders as any,
       total,
       page,
       pageSize,
       totalPages: Math.ceil(total / pageSize),
     };
+  }
+
+  async countAll(): Promise<number> {
+    return prisma.order.count();
   }
 
   async findById(id: string): Promise<Order | null> {
@@ -184,7 +190,7 @@ export class PrismaOrderRepository implements IOrderRepository {
     }));
   }
 
-  async createWithItemsAndUpdateStock(data: CreateOrderWithStockInput): Promise<Order> {
+  async createWithItemsAndUpdateStock(data: CreateOrderInput): Promise<Order> {
     return prisma.$transaction(async (tx) => {
       const order = await tx.order.create({
         data: {
@@ -201,7 +207,7 @@ export class PrismaOrderRepository implements IOrderRepository {
       });
 
       await Promise.all(
-        data.itemsWithQuantity.map(({ productId, quantity }) =>
+        data.items.map(({ productId, quantity }) =>
           tx.product.update({
             where: { id: productId },
             data: { stock: { decrement: quantity } },

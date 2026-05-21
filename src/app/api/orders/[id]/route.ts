@@ -13,7 +13,6 @@ const VALID_TRANSITIONS: Record<string, string[]> = {
   ON_THE_WAY: ['DELIVERED'],
 };
 
-
 const ROLE_ALLOWED_STATUSES: Record<string, string[]> = {
   [APP_ROLES.DELIVERY]: ['ON_THE_WAY', 'DELIVERED'],
   [APP_ROLES.PAYMENTS]: ['CONFIRMED', 'CANCELLED'],

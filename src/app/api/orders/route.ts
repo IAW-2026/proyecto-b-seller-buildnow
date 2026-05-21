@@ -13,7 +13,6 @@ type ItemInput = { productId: string; quantity: number };
 
 export async function GET(request: NextRequest) {
   try {
-
     await requireRole([APP_ROLES.DELIVERY]);
 
     const status = request.nextUrl.searchParams.get('status');
@@ -31,16 +30,16 @@ export async function GET(request: NextRequest) {
 }
 
 
-function calcularTotalesYArmarItems(items: ItemInput[], products: Product[]) {
+function calcularTotalesYArmarItems(items: ItemInput[], productsMap: Map<string, Product>) {
   let totalAmount = 0;
   let totalWeight = 0;
 
   const orderItems = items.map(item => {
-    const product = products.find(p => p.id === item.productId);
+    const product = productsMap.get(item.productId);
     if (!product) throw new Error(`Producto ${item.productId} no encontrado`);
 
     if (product.stock < item.quantity) {
-      throw new Error(`Producto ${product.name} no tiene stock suficiente`);
+      throw new Error(`Stock insuficiente para "${product.name}"`);
     }
 
     totalAmount += Number(product.price) * item.quantity;
@@ -70,11 +69,9 @@ export async function POST(request: NextRequest) {
     const productIds = items.map((item: ItemInput) => item.productId);
     const products = await productRepo.findManyByIds(productIds);
 
-    if (products.length !== productIds.length) {
-      return NextResponse.json({ error: 'Uno o más productos no encontrados' }, { status: 404 });
-    }
+    const productsMap = new Map(products.map(p => [p.id, p]));
 
-    const { totalAmount, totalWeight, orderItems } = calcularTotalesYArmarItems(items, products);
+    const { totalAmount, totalWeight, orderItems } = calcularTotalesYArmarItems(items, productsMap);
 
     const order = await orderRepo.createWithItemsAndUpdateStock({
       buyerId,
@@ -82,11 +79,7 @@ export async function POST(request: NextRequest) {
       deliveryAddress,
       totalAmount,
       totalWeight,
-      items: orderItems,
-      itemsWithQuantity: items.map((item: ItemInput) => ({
-        productId: item.productId,
-        quantity: item.quantity,
-      })),
+      items: orderItems
     });
 
     return NextResponse.json({
