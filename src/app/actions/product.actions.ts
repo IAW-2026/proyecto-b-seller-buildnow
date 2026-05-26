@@ -150,7 +150,7 @@ export async function deleteProductAction(productId: string) {
   revalidatePath('/seller/dashboard/products');
 }
 
-// Funciones auxiliares para manejo de imágenes
+
 async function handleImageUpload(imageFile: File | null): Promise<string | null> {
   if (!imageFile || imageFile.size === 0) return null;
 

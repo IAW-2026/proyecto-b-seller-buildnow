@@ -1,4 +1,4 @@
-import { Store } from '@prisma/client';
+import { Store, StoreStatus } from '@prisma/client';
 
 export interface SearchStoresOptions {
   pageNumber: number;
@@ -16,6 +16,7 @@ export interface PaginatedStores {
 
 export interface IStoreRepository {
   findAll(): Promise<Store[]>;
+  countByStatus(statuses: StoreStatus[]): Promise<number>;
   findPaginated(options: SearchStoresOptions): Promise<PaginatedStores>;
   findById(id: string): Promise<Store | null>;
   findBySellerId(sellerId: string): Promise<Store | null>;

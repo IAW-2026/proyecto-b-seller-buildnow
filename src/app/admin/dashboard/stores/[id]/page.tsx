@@ -3,16 +3,22 @@ import { APP_ROLES } from '@/core/auth/roles';
 import { PrismaStoreRepository } from '@/infrastructure/repositories/prisma/PrismaStoreRepository';
 import { PrismaProductRepository } from '@/infrastructure/repositories/prisma/PrismaProductRepository';
 import { PrismaOrderRepository } from '@/infrastructure/repositories/prisma/PrismaOrderRepository';
+import { PAGE_SIZE } from '@/core/config/pagination';
+import { Pagination } from '@/components/ui/Pagination';
 import { notFound } from 'next/navigation';
-import { ArrowLeft, Package, MapPin, Calendar, CheckCircle2, ShieldAlert } from 'lucide-react';
+import { ArrowLeft, Package, MapPin, Calendar, ShieldAlert } from 'lucide-react';
 import Link from 'next/link';
 
 export default async function AdminStoreDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ page?: string }>;
 }) {
   const { id } = await params;
+  const { page: pageParam } = await searchParams;
+  const currentPage = Math.max(1, parseInt(pageParam ?? '1', 10));
 
   const storeRepo = new PrismaStoreRepository();
   const productRepo = new PrismaProductRepository();
@@ -23,7 +29,12 @@ export default async function AdminStoreDetailPage({
     notFound();
   }
 
-  const products = await productRepo.findByStore(id);
+  const { data: products, total, totalPages } = await productRepo.findPaginatedByStore({
+    storeId: id,
+    pageNumber: currentPage,
+    pageSize: PAGE_SIZE,
+  });
+
   const isSuspended = store.status === 'SUSPENDED';
 
   return (
@@ -73,14 +84,14 @@ export default async function AdminStoreDetailPage({
           <Package className="text-zinc-400" size={20} />
           <div>
             <p className="text-xs font-medium text-zinc-500 uppercase">Total Productos</p>
-            <p className="text-sm text-zinc-900 font-bold">{products.length}</p>
+            <p className="text-sm text-zinc-900 font-bold">{total}</p>
           </div>
         </div>
       </div>
 
       <div className="h-px bg-zinc-200 w-full" />
 
-      {/* Catálogo de Productos*/}
+      {/* Catálogo de Productos */}
       <div>
         <h3 className="text-lg font-semibold text-zinc-900 mb-4 flex items-center gap-2">
           <Package size={20} className="text-zinc-500" />
@@ -91,37 +102,48 @@ export default async function AdminStoreDetailPage({
           {products.length === 0 ? (
             <div className="p-8 text-center text-zinc-500 text-sm">Este corralón aún no ha cargado productos.</div>
           ) : (
-            <table className="w-full text-left">
-              <thead className="bg-zinc-50 border-b border-zinc-200 text-xs uppercase text-zinc-500">
-                <tr>
-                  <th className="px-6 py-3 font-medium">Producto</th>
-                  <th className="px-6 py-3 font-medium">Precio</th>
-                  <th className="px-6 py-3 font-medium">Stock</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-zinc-100">
-                {products.map((p) => (
-                  <tr key={p.id} className="hover:bg-zinc-50 transition-colors">
-                    <td className="px-6 py-3">
-                      <p className="font-medium text-zinc-900">{p.name}</p>
-                    </td>
-                    <td className="px-6 py-3 text-sm text-zinc-600">
-                      ${Number(p.price).toLocaleString('es-AR')}
-                    </td>
-                    <td className="px-6 py-3 text-sm">
-                      <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${p.stock > 0 ? 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-600/20' : 'bg-red-50 text-red-700 ring-1 ring-red-600/20'
-                        }`}>
-                        {p.stock} un.
-                      </span>
-                    </td>
+            <>
+              <table className="w-full text-left">
+                <thead className="bg-zinc-50 border-b border-zinc-200 text-xs uppercase text-zinc-500">
+                  <tr>
+                    <th className="px-6 py-3 font-medium">Producto</th>
+                    <th className="px-6 py-3 font-medium">Precio</th>
+                    <th className="px-6 py-3 font-medium">Stock</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-zinc-100">
+                  {products.map((p) => (
+                    <tr key={p.id} className="hover:bg-zinc-50 transition-colors">
+                      <td className="px-6 py-3">
+                        <p className="font-medium text-zinc-900">{p.name}</p>
+                      </td>
+                      <td className="px-6 py-3 text-sm text-zinc-600">
+                        ${Number(p.price).toLocaleString('es-AR')}
+                      </td>
+                      <td className="px-6 py-3 text-sm">
+                        <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
+                          p.stock > 0
+                            ? 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-600/20'
+                            : 'bg-red-50 text-red-700 ring-1 ring-red-600/20'
+                        }`}>
+                          {p.stock} un.
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <Pagination
+                page={currentPage}
+                totalPages={totalPages}
+                total={total}
+                pageSize={PAGE_SIZE}
+              />
+            </>
           )}
         </div>
       </div>
 
     </div>
   );
-}
+}

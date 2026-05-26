@@ -1,10 +1,16 @@
 import prisma from '../../db/prisma';
 import { IStoreRepository, SearchStoresOptions, PaginatedStores } from '../../../core/repositories/IStoreRepository';
-import { Store, Prisma } from '@prisma/client';
+import { Store, StoreStatus, Prisma } from '@prisma/client';
 
 export class PrismaStoreRepository implements IStoreRepository {
   async findAll(): Promise<Store[]> {
     return prisma.store.findMany();
+  }
+
+  async countByStatus(statuses: StoreStatus[]): Promise<number> {
+    return prisma.store.count({
+      where: { status: { in: statuses } }
+    });
   }
 
   async findPaginated(options: SearchStoresOptions): Promise<PaginatedStores> {
