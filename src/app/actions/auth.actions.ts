@@ -3,10 +3,7 @@
 import { clerkClient } from '@clerk/nextjs/server';
 import { StoreStatus } from '@prisma/client';
 import prisma from '@/infrastructure/db/prisma';
-
-export type RegisterSellerResult =
-    | { success: true }
-    | { success: false; error: string };
+import type { ActionResult } from '@/types/action-result';
 
 function parseSellerFormData(formData: FormData) {
     return {
@@ -83,7 +80,7 @@ function extractClerkErrorMessage(err: unknown): string {
 }
 
 
-export async function registerSeller(formData: FormData): Promise<RegisterSellerResult> {
+export async function registerSeller(formData: FormData): Promise<ActionResult> {
     const data = parseSellerFormData(formData);
 
     const validationError = validateSellerInput(data);

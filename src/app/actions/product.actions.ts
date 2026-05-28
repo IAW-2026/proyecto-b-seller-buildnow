@@ -7,6 +7,7 @@ import { APP_ROLES } from '@/core/auth/roles';
 import { Prisma } from '@prisma/client';
 import { PrismaProductRepository } from '@/infrastructure/repositories/prisma/PrismaProductRepository';
 import { put, del } from '@vercel/blob';
+import type { ActionResult } from '@/types/action-result';
 
 export async function searchStoreProductsAction(params: {
   storeId: string;
@@ -17,7 +18,6 @@ export async function searchStoreProductsAction(params: {
 }) {
   await requireRole([APP_ROLES.SELLER]);
   const { seller } = await getSellerContext();
-
 
   if (seller.storeId !== params.storeId) {
     throw new Error('No tenés permisos para acceder a esta tienda');
@@ -55,7 +55,8 @@ export async function searchStoreProductsAction(params: {
     totalPages: result.totalPages,
   };
 }
-export async function createProductAction(formData: FormData) {
+
+export async function createProductAction(formData: FormData): Promise<ActionResult> {
   await requireRole([APP_ROLES.SELLER]);
   const { seller } = await getSellerContext();
 
@@ -67,10 +68,15 @@ export async function createProductAction(formData: FormData) {
   const available = formData.get('available') === 'on';
 
   if (!name || !categoryId || isNaN(price) || isNaN(stock) || isNaN(weight)) {
-    throw new Error('Faltan campos obligatorios o hay campos con formato incorrecto');
+    return { success: false, error: 'Faltan campos obligatorios o hay campos con formato incorrecto' };
   }
 
   const imageFile = formData.get('image') as File | null;
+
+  if (imageFile && imageFile.size > 4.5 * 1024 * 1024) {
+    return { success: false, error: 'La imagen excede el límite de 4.5MB' };
+  }
+
   const imgUrl = await handleImageUpload(imageFile);
 
   const productRepo = new PrismaProductRepository();
@@ -86,9 +92,10 @@ export async function createProductAction(formData: FormData) {
   });
 
   revalidatePath('/seller/dashboard/products');
+  return { success: true };
 }
 
-export async function updateProductAction(productId: string, formData: FormData) {
+export async function updateProductAction(productId: string, formData: FormData): Promise<ActionResult> {
   await requireRole([APP_ROLES.SELLER]);
   const { seller } = await getSellerContext();
 
@@ -96,7 +103,7 @@ export async function updateProductAction(productId: string, formData: FormData)
 
   const existingProduct = await productRepo.findById(productId);
   if (!existingProduct || existingProduct.storeId !== seller.storeId) {
-    throw new Error('Producto no encontrado o no tenés permisos para editarlo');
+    return { success: false, error: 'Producto no encontrado o no tenés permisos para editarlo' };
   }
 
   const name = formData.get('name') as string;
@@ -107,10 +114,15 @@ export async function updateProductAction(productId: string, formData: FormData)
   const available = formData.get('available') === 'true' || formData.get('available') === 'on';
 
   if (!name || !categoryId || isNaN(price) || isNaN(stock) || isNaN(weight)) {
-    throw new Error('Faltan campos obligatorios o hay campos con formato incorrecto');
+    return { success: false, error: 'Faltan campos obligatorios o hay campos con formato incorrecto' };
   }
 
   const imageFile = formData.get('image') as File | null;
+
+  if (imageFile && imageFile.size > 4.5 * 1024 * 1024) {
+    return { success: false, error: 'La imagen excede el límite de 4.5MB' };
+  }
+
   const newImgUrl = await handleImageUpload(imageFile);
 
   if (newImgUrl && existingProduct.img) {
@@ -130,9 +142,10 @@ export async function updateProductAction(productId: string, formData: FormData)
   });
 
   revalidatePath('/seller/dashboard/products');
+  return { success: true };
 }
 
-export async function deleteProductAction(productId: string) {
+export async function deleteProductAction(productId: string): Promise<ActionResult> {
   await requireRole([APP_ROLES.SELLER]);
   const { seller } = await getSellerContext();
 
@@ -140,7 +153,7 @@ export async function deleteProductAction(productId: string) {
 
   const existingProduct = await productRepo.findById(productId);
   if (!existingProduct || existingProduct.storeId !== seller.storeId) {
-    throw new Error('Producto no encontrado o no tenés permisos para borrarlo');
+    return { success: false, error: 'Producto no encontrado o no tenés permisos para borrarlo' };
   }
 
   await handleDeleteOldImage(existingProduct.img);
@@ -148,15 +161,12 @@ export async function deleteProductAction(productId: string) {
   await productRepo.delete(productId);
 
   revalidatePath('/seller/dashboard/products');
+  return { success: true };
 }
 
 
 async function handleImageUpload(imageFile: File | null): Promise<string | null> {
   if (!imageFile || imageFile.size === 0) return null;
-
-  if (imageFile.size > 4.5 * 1024 * 1024) {
-    throw new Error('La imagen excede el límite de 4.5MB');
-  }
 
   const blob = await put(imageFile.name, imageFile, { access: 'public' });
   return blob.url;

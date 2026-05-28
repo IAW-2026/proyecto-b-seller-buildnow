@@ -13,13 +13,12 @@ export function StoreRowActions({ storeId, status }: { storeId: string, status: 
 
   const handleToggle = () => {
     startTransition(async () => {
-      try {
-        await toggleStoreSuspensionAction(storeId, !isSuspended);
-        toast.success(isSuspended ? "Tienda reactivada con éxito" : "Tienda suspendida con éxito");
-      } catch (error) {
-        console.error("Error al cambiar estado:", error);
-        toast.error("Hubo un error al cambiar el estado de la tienda");
+      const result = await toggleStoreSuspensionAction(storeId, !isSuspended);
+      if (!result.success) {
+        toast.error(result.error);
+        return;
       }
+      toast.success(isSuspended ? 'Tienda reactivada con éxito' : 'Tienda suspendida con éxito');
     });
   };
 

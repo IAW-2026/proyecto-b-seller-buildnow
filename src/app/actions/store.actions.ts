@@ -5,15 +5,14 @@ import { getSellerContext } from '@/core/auth/getSellerContext';
 import { APP_ROLES } from '@/core/auth/roles';
 import { PrismaStoreRepository } from '@/infrastructure/repositories/prisma/PrismaStoreRepository';
 import { StoreStatus } from '@prisma/client';
+import type { ActionResult } from '@/types/action-result';
 
-
-
-export async function updateStoreAction(storeId: string, formData: FormData) {
+export async function updateStoreAction(storeId: string, formData: FormData): Promise<ActionResult> {
   await requireRole([APP_ROLES.SELLER]);
   const { seller } = await getSellerContext();
 
   if (seller.storeId !== storeId) {
-    throw new Error('No tenés permisos para editar esta tienda');
+    return { success: false, error: 'No tenés permisos para editar esta tienda' };
   }
 
   const name = formData.get('name') as string;
@@ -22,11 +21,12 @@ export async function updateStoreAction(storeId: string, formData: FormData) {
   const status = formData.get('status') as StoreStatus;
 
   if (!name || !address || !status) {
-    throw new Error('El nombre, dirección y estado son obligatorios');
+    return { success: false, error: 'El nombre, dirección y estado son obligatorios' };
   }
-  const VALID_STATUSES: StoreStatus[] = ["OPEN", "CLOSE"];
+
+  const VALID_STATUSES: StoreStatus[] = ['OPEN', 'CLOSE'];
   if (!VALID_STATUSES.includes(status)) {
-    throw new Error('Estado inválido');
+    return { success: false, error: 'Estado inválido' };
   }
 
   const storeRepo = new PrismaStoreRepository();
@@ -38,4 +38,5 @@ export async function updateStoreAction(storeId: string, formData: FormData) {
   });
 
   revalidatePath('/seller/dashboard/store');
+  return { success: true };
 }

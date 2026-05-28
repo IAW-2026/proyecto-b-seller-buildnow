@@ -14,15 +14,15 @@ export function StoreClient({ store }: { store: Store }) {
     setIsLoading(true);
 
     const formData = new FormData(e.currentTarget);
+    const result = await updateStoreAction(store.id, formData);
+    setIsLoading(false);
 
-    try {
-      await updateStoreAction(store.id, formData);
-      toast.success('Información de la tienda actualizada correctamente.');
-    } catch (err: any) {
-      toast.error(err.message || 'Ocurrió un error al actualizar la tienda.');
-    } finally {
-      setIsLoading(false);
+    if (!result.success) {
+      toast.error(result.error);
+      return;
     }
+
+    toast.success('Información de la tienda actualizada correctamente.');
   };
 
   return (

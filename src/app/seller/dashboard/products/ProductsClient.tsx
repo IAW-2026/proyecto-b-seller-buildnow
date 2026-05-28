@@ -70,8 +70,8 @@ export function ProductsClient({
         totalPages: result.totalPages,
       });
       setCurrentPage(result.page);
-    } catch (err: any) {
-      toast.error(err.message || 'Error al buscar productos');
+    } catch {
+      toast.error('Error al buscar productos');
     } finally {
       setIsSearching(false);
     }
@@ -112,16 +112,15 @@ export function ProductsClient({
   const confirmDelete = async () => {
     if (!productToDelete) return;
     setIsLoading(true);
-    try {
-      await deleteProductAction(productToDelete);
-      toast.success('Producto eliminado exitosamente');
-      closeDeleteModal();
-      refreshCurrentPage();
-    } catch (err: any) {
-      toast.error(err.message || 'Error al eliminar el producto');
-    } finally {
-      setIsLoading(false);
+    const result = await deleteProductAction(productToDelete);
+    setIsLoading(false);
+    if (!result.success) {
+      toast.error(result.error);
+      return;
     }
+    toast.success('Producto eliminado exitosamente');
+    closeDeleteModal();
+    refreshCurrentPage();
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -129,28 +128,20 @@ export function ProductsClient({
     setIsLoading(true);
     const formData = new FormData(e.currentTarget);
 
-    const imageFile = formData.get('image') as File | null;
-    if (imageFile && imageFile.size > 4.5 * 1024 * 1024) {
-      toast.error('La imagen excede el límite de 4.5MB');
-      setIsLoading(false);
+    const result = editingProduct
+      ? await updateProductAction(editingProduct.id, formData)
+      : await createProductAction(formData);
+
+    setIsLoading(false);
+
+    if (!result.success) {
+      toast.error(result.error);
       return;
     }
 
-    try {
-      if (editingProduct) {
-        await updateProductAction(editingProduct.id, formData);
-        toast.success('Producto actualizado exitosamente');
-      } else {
-        await createProductAction(formData);
-        toast.success('Producto creado exitosamente');
-      }
-      closeModal();
-      refreshCurrentPage();
-    } catch (err: any) {
-      toast.error(err.message || 'Error al guardar el producto');
-    } finally {
-      setIsLoading(false);
-    }
+    toast.success(editingProduct ? 'Producto actualizado exitosamente' : 'Producto creado exitosamente');
+    closeModal();
+    refreshCurrentPage();
   };
 
   return (

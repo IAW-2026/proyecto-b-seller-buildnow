@@ -56,14 +56,13 @@ export function OrdersClient({
 
   const handleMarkReady = async (orderId: string) => {
     setLoadingOrderId(orderId);
-    try {
-      await updateOrderStatusAction(orderId, OrderStatus.READY);
-      toast.success('Orden marcada como lista exitosamente');
-    } catch (err: any) {
-      toast.error(err.message || 'Error al actualizar la orden');
-    } finally {
-      setLoadingOrderId(null);
+    const result = await updateOrderStatusAction(orderId, OrderStatus.READY);
+    setLoadingOrderId(null);
+    if (!result.success) {
+      toast.error(result.error);
+      return;
     }
+    toast.success('Orden marcada como lista exitosamente');
   };
 
   return (
