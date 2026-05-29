@@ -7,10 +7,38 @@ import { APP_ROLES } from '@/core/auth/roles';
 import { OrderStatus } from '@prisma/client';
 import { PrismaOrderRepository } from '@/infrastructure/repositories/prisma/PrismaOrderRepository';
 import type { ActionResult } from '@/types/action-result';
+import { auth } from '@clerk/nextjs/server';
 
 const SELLER_TRANSITIONS: Record<string, OrderStatus[]> = {
   CONFIRMED: [OrderStatus.READY],
 };
+
+async function requestPayout(orderId: string, recipientId: string, amount: number) {
+  const { getToken } = await auth();
+  const token = await getToken();
+
+  const apiUrl = process.env.PAYMENTS_API_URL || 'http://localhost:3000';
+
+  const response = await fetch(`${apiUrl}/api/payments/payouts`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({
+      orderId,
+      recipientId,
+      recipientType: 'SELLER',
+      amount,
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error('Error al solicitar el pago a la API de payments');
+  }
+
+  return response.json();
+}
 
 export async function updateOrderStatusAction(orderId: string, newStatus: OrderStatus): Promise<ActionResult> {
   const roleCheck = await requireRole([APP_ROLES.SELLER]);
@@ -47,6 +75,14 @@ export async function updateOrderStatusAction(orderId: string, newStatus: OrderS
   if (!updateResult.success) {
     return { success: false, error: updateResult.error };
   }
+
+  // TODO: Habilitar cuando se integre con la API de payments
+  // try {
+  //   await requestPayout(order.id, seller.storeId!, Number(order.totalAmount));
+  // } catch (error) {
+  //   console.error('Error requesting payout:', error);
+  //   // Manejar el error o dejar que falle la action si es bloqueante
+  // }
 
   revalidatePath('/seller/dashboard/orders');
   revalidatePath('/seller/dashboard');
