@@ -13,9 +13,6 @@ export default async function DashboardLayout({
   children: React.ReactNode;
 }) {
 
-
-  const { sessionClaims } = await auth();
-
   return (
     <div className="flex h-screen overflow-hidden bg-zinc-50 font-sans selection:bg-orange-500/30">
       <Sidebar />

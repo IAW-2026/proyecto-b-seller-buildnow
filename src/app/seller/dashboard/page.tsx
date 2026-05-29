@@ -7,7 +7,6 @@ import { PrismaOrderRepository } from '@/infrastructure/repositories/prisma/Pris
 import { PrismaProductRepository } from '@/infrastructure/repositories/prisma/PrismaProductRepository';
 import { Package, TrendingUp, AlertCircle, ShoppingCart, ArrowRight } from "lucide-react";
 import Link from 'next/link';
-import { OrderStatus } from '@prisma/client';
 import { OrderStatusBadge } from './orders/OrderStatusBadge';
 import { MetricCard } from '@/components/ui/MetricCard';
 
@@ -37,14 +36,16 @@ async function getEarningsFromPaymentsApi(token: string): Promise<number | null>
 const PAGE_SIZE = Number(process.env.ORDERS_PAGE_SIZE) || 10;
 
 export default async function DashboardPage() {
-  await requireRole([APP_ROLES.SELLER]);
+  const roleCheck = await requireRole([APP_ROLES.SELLER]);
+  if (!roleCheck.success) redirect('/no-autorizado');
+
   const { userId, getToken } = await auth();
   if (!userId) redirect('/sign-in');
 
   const sellerRepo = new PrismaSellerRepository();
   const seller = await sellerRepo.findById(userId);
 
-  if (!seller || !seller.storeId) redirect('/sign-in');
+  if (!seller || !seller.storeId) redirect('/no-store');
 
   const orderRepo = new PrismaOrderRepository();
   const productRepo = new PrismaProductRepository();

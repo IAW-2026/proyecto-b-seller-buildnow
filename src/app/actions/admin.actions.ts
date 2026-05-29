@@ -8,7 +8,8 @@ import { revalidatePath } from 'next/cache';
 import type { ActionResult } from '@/types/action-result';
 
 export async function toggleStoreSuspensionAction(storeId: string, suspend: boolean): Promise<ActionResult> {
-  await requireRole([APP_ROLES.ADMIN]);
+  const roleCheck = await requireRole([APP_ROLES.ADMIN]);
+  if (!roleCheck.success) return roleCheck;
 
   const storeRepo = new PrismaStoreRepository();
   const store = await storeRepo.findById(storeId);

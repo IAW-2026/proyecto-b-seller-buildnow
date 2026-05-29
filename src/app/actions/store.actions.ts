@@ -8,8 +8,12 @@ import { StoreStatus } from '@prisma/client';
 import type { ActionResult } from '@/types/action-result';
 
 export async function updateStoreAction(storeId: string, formData: FormData): Promise<ActionResult> {
-  await requireRole([APP_ROLES.SELLER]);
-  const { seller } = await getSellerContext();
+  const roleCheck = await requireRole([APP_ROLES.SELLER]);
+  if (!roleCheck.success) return roleCheck;
+
+  const sellerCtx = await getSellerContext();
+  if (!sellerCtx.success) return sellerCtx;
+  const { seller } = sellerCtx.data;
 
   if (seller.storeId !== storeId) {
     return { success: false, error: 'No tenés permisos para editar esta tienda' };

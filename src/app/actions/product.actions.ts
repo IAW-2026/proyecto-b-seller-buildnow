@@ -16,11 +16,15 @@ export async function searchStoreProductsAction(params: {
   pageNumber: number;
   pageSize: number;
 }) {
-  await requireRole([APP_ROLES.SELLER]);
-  const { seller } = await getSellerContext();
+  const roleCheck = await requireRole([APP_ROLES.SELLER]);
+  if (!roleCheck.success) return roleCheck;
+
+  const sellerCtx = await getSellerContext();
+  if (!sellerCtx.success) return sellerCtx;
+  const { seller } = sellerCtx.data;
 
   if (seller.storeId !== params.storeId) {
-    throw new Error('No tenés permisos para acceder a esta tienda');
+    return { success: false as const, error: 'No tenés permisos para acceder a esta tienda' };
   }
 
   const productRepo = new PrismaProductRepository();
@@ -48,6 +52,7 @@ export async function searchStoreProductsAction(params: {
   }));
 
   return {
+    success: true as const,
     data,
     total: result.total,
     page: result.page,
@@ -57,8 +62,12 @@ export async function searchStoreProductsAction(params: {
 }
 
 export async function createProductAction(formData: FormData): Promise<ActionResult> {
-  await requireRole([APP_ROLES.SELLER]);
-  const { seller } = await getSellerContext();
+  const roleCheck = await requireRole([APP_ROLES.SELLER]);
+  if (!roleCheck.success) return roleCheck;
+
+  const sellerCtx = await getSellerContext();
+  if (!sellerCtx.success) return sellerCtx;
+  const { seller } = sellerCtx.data;
 
   const name = formData.get('name') as string;
   const categoryId = formData.get('categoryId') as string;
@@ -96,8 +105,12 @@ export async function createProductAction(formData: FormData): Promise<ActionRes
 }
 
 export async function updateProductAction(productId: string, formData: FormData): Promise<ActionResult> {
-  await requireRole([APP_ROLES.SELLER]);
-  const { seller } = await getSellerContext();
+  const roleCheck = await requireRole([APP_ROLES.SELLER]);
+  if (!roleCheck.success) return roleCheck;
+
+  const sellerCtx = await getSellerContext();
+  if (!sellerCtx.success) return sellerCtx;
+  const { seller } = sellerCtx.data;
 
   const productRepo = new PrismaProductRepository();
 
@@ -146,8 +159,12 @@ export async function updateProductAction(productId: string, formData: FormData)
 }
 
 export async function deleteProductAction(productId: string): Promise<ActionResult> {
-  await requireRole([APP_ROLES.SELLER]);
-  const { seller } = await getSellerContext();
+  const roleCheck = await requireRole([APP_ROLES.SELLER]);
+  if (!roleCheck.success) return roleCheck;
+
+  const sellerCtx = await getSellerContext();
+  if (!sellerCtx.success) return sellerCtx;
+  const { seller } = sellerCtx.data;
 
   const productRepo = new PrismaProductRepository();
 

@@ -9,13 +9,14 @@ import { ProductsClient } from './ProductsClient';
 import { PAGE_SIZE } from '@/core/config/pagination';
 
 export default async function ProductsPage() {
-  await requireRole([APP_ROLES.SELLER]);
+  const roleCheck = await requireRole([APP_ROLES.SELLER]);
+  if (!roleCheck.success) redirect('/no-autorizado');
   const { userId } = await auth();
   if (!userId) redirect('/sign-in');
 
   const sellerRepo = new PrismaSellerRepository();
   const seller = await sellerRepo.findById(userId);
-  if (!seller || !seller.storeId) redirect('/sign-in');
+  if (!seller || !seller.storeId) redirect('/no-store');
 
   const productRepo = new PrismaProductRepository();
   const categoryRepo = new PrismaCategoryRepository();

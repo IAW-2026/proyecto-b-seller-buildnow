@@ -13,8 +13,12 @@ const SELLER_TRANSITIONS: Record<string, OrderStatus[]> = {
 };
 
 export async function updateOrderStatusAction(orderId: string, newStatus: OrderStatus): Promise<ActionResult> {
-  await requireRole([APP_ROLES.SELLER]);
-  const { seller } = await getSellerContext();
+  const roleCheck = await requireRole([APP_ROLES.SELLER]);
+  if (!roleCheck.success) return roleCheck;
+
+  const sellerCtx = await getSellerContext();
+  if (!sellerCtx.success) return sellerCtx;
+  const { seller } = sellerCtx.data;
 
   const orderRepo = new PrismaOrderRepository();
   const order = await orderRepo.findById(orderId);

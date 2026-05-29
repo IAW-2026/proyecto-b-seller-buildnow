@@ -7,19 +7,24 @@ export type SellerContext = {
   seller: Seller & { storeId: string };
 };
 
-export async function getSellerContext(): Promise<SellerContext> {
+export type SellerContextResult =
+  | { success: true; data: SellerContext }
+  | { success: false; error: string };
+
+export async function getSellerContext(): Promise<SellerContextResult> {
   const { userId } = await auth();
 
   if (!userId) {
-    throw new Error('No autorizado');
+    return { success: false, error: 'No autorizado' };
   }
 
   const sellerRepo = new PrismaSellerRepository();
   const seller = await sellerRepo.findById(userId);
 
   if (!seller || !seller.storeId) {
-    throw new Error('Tu cuenta no tiene una tienda asignada');
+    return { success: false, error: 'Tu cuenta no tiene una tienda asignada' };
   }
 
-  return { userId, seller: seller as Seller & { storeId: string } };
+  return { success: true, data: { userId, seller: seller as Seller & { storeId: string } } };
 }
+

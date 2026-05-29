@@ -2,6 +2,7 @@ import { Sidebar } from "@/components/layout/Sidebar";
 import { Topbar } from "@/components/layout/Topbar";
 import { requireRole } from "@/core/auth/auth";
 import { APP_ROLES } from "@/core/auth/roles";
+import { redirect } from "next/navigation";
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -11,7 +12,8 @@ export default async function AdminDashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  await requireRole([APP_ROLES.ADMIN]);
+  const roleCheck = await requireRole([APP_ROLES.ADMIN]);
+  if (!roleCheck.success) redirect('/no-autorizado');
 
   return (
     <div className="flex h-screen overflow-hidden bg-zinc-50 font-sans selection:bg-orange-500/30">

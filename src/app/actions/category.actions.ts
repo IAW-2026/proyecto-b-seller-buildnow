@@ -7,7 +7,8 @@ import { revalidatePath } from 'next/cache';
 import type { ActionResult } from '@/types/action-result';
 
 export async function createCategoryAction(formData: FormData): Promise<ActionResult> {
-  await requireRole([APP_ROLES.ADMIN]);
+  const roleCheck = await requireRole([APP_ROLES.ADMIN]);
+  if (!roleCheck.success) return roleCheck;
 
   const name = formData.get('name') as string;
 
@@ -33,7 +34,8 @@ export async function createCategoryAction(formData: FormData): Promise<ActionRe
 }
 
 export async function deleteCategoryAction(id: string): Promise<ActionResult> {
-  await requireRole([APP_ROLES.ADMIN]);
+  const roleCheck = await requireRole([APP_ROLES.ADMIN]);
+  if (!roleCheck.success) return roleCheck;
 
   const categoryRepo = new PrismaCategoryRepository();
 
@@ -51,7 +53,8 @@ export async function deleteCategoryAction(id: string): Promise<ActionResult> {
 }
 
 export async function updateCategoryAction(id: string, formData: FormData): Promise<ActionResult> {
-  await requireRole([APP_ROLES.ADMIN]);
+  const roleCheck = await requireRole([APP_ROLES.ADMIN]);
+  if (!roleCheck.success) return roleCheck;
 
   const name = formData.get('name') as string;
 

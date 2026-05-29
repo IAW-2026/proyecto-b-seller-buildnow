@@ -62,6 +62,11 @@ export function ProductsClient({
         pageSize: PAGE_SIZE,
       });
 
+      if (!result.success) {
+        toast.error(result.error);
+        return;
+      }
+
       setProducts(result.data as SerializedProduct[]);
       setPagination({
         total: result.total,

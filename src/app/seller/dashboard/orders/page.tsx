@@ -13,13 +13,14 @@ export default async function OrdersPage({
 }: {
   searchParams: Promise<{ page?: string; status?: string }>;
 }) {
-  await requireRole([APP_ROLES.SELLER]);
+  const roleCheck = await requireRole([APP_ROLES.SELLER]);
+  if (!roleCheck.success) redirect('/no-autorizado');
 
   const { userId } = await auth();
   if (!userId) redirect('/sign-in');
   const sellerRepo = new PrismaSellerRepository();
   const seller = await sellerRepo.findById(userId);
-  if (!seller || !seller.storeId) redirect('/sign-in');
+  if (!seller || !seller.storeId) redirect('/no-store');
 
   const { page: pageParam, status } = await searchParams;
   const page = Math.max(1, Number(pageParam) || 1);
