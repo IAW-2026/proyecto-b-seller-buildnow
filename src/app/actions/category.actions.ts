@@ -30,7 +30,7 @@ export async function createCategoryAction(formData: FormData): Promise<ActionRe
   }
 
   revalidatePath('/admin/dashboard/categories');
-  return { success: true };
+  return { success: true, data: undefined };
 }
 
 export async function deleteCategoryAction(id: string): Promise<ActionResult> {
@@ -42,7 +42,7 @@ export async function deleteCategoryAction(id: string): Promise<ActionResult> {
   try {
     await categoryRepo.delete(id);
     revalidatePath('/admin/dashboard/categories');
-    return { success: true };
+    return { success: true, data: undefined };
   } catch (error) {
     console.error(error);
     return {
@@ -74,5 +74,5 @@ export async function updateCategoryAction(id: string, formData: FormData): Prom
   }
 
   revalidatePath('/admin/dashboard/categories');
-  return { success: true };
+  return { success: true, data: undefined };
 }

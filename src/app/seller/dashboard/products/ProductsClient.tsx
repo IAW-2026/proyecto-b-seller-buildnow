@@ -117,15 +117,22 @@ export function ProductsClient({
   const confirmDelete = async () => {
     if (!productToDelete) return;
     setIsLoading(true);
-    const result = await deleteProductAction(productToDelete);
-    setIsLoading(false);
-    if (!result.success) {
-      toast.error(result.error);
-      return;
+    try {
+      const result = await deleteProductAction(productToDelete);
+
+      if (!result.success) {
+        toast.error(result.error);
+        return;
+      }
+
+      toast.success('Producto eliminado exitosamente');
+      closeDeleteModal();
+      refreshCurrentPage();
+    } catch (error) {
+      toast.error('Ocurrió un error inesperado al intentar eliminar.');
+    } finally {
+      setIsLoading(false);
     }
-    toast.success('Producto eliminado exitosamente');
-    closeDeleteModal();
-    refreshCurrentPage();
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -133,20 +140,24 @@ export function ProductsClient({
     setIsLoading(true);
     const formData = new FormData(e.currentTarget);
 
-    const result = editingProduct
-      ? await updateProductAction(editingProduct.id, formData)
-      : await createProductAction(formData);
+    try {
+      const result = editingProduct
+        ? await updateProductAction(editingProduct.id, formData)
+        : await createProductAction(formData);
 
-    setIsLoading(false);
+      if (!result.success) {
+        toast.error(result.error);
+        return;
+      }
 
-    if (!result.success) {
-      toast.error(result.error);
-      return;
+      toast.success(editingProduct ? 'Producto actualizado exitosamente' : 'Producto creado exitosamente');
+      closeModal();
+      refreshCurrentPage();
+    } catch (error) {
+      toast.error('Ocurrió un error inesperado de conexión.');
+    } finally {
+      setIsLoading(false);
     }
-
-    toast.success(editingProduct ? 'Producto actualizado exitosamente' : 'Producto creado exitosamente');
-    closeModal();
-    refreshCurrentPage();
   };
 
   return (

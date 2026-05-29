@@ -3,6 +3,7 @@ import { StoreStatus } from '@prisma/client';
 import { StoreRowActions } from './StoreRowActions';
 import { Store } from 'lucide-react';
 import { Pagination } from '@/components/ui/Pagination';
+import { ErrorBanner } from '@/components/ui/ErrorBanner';
 
 const PAGE_SIZE = 10;
 
@@ -15,11 +16,15 @@ export default async function AdminStoresPage({
   const currentPage = Math.max(1, parseInt(params.page ?? '1', 10));
 
   const storeRepo = new PrismaStoreRepository();
-  const { data: stores, total, totalPages } = await storeRepo.findPaginated({
+  const storeResult = await storeRepo.findPaginated({
     pageNumber: currentPage,
     pageSize: PAGE_SIZE,
     isAdmin: true,
   });
+
+  const stores = storeResult.success ? storeResult.data.data : [];
+  const total = storeResult.success ? storeResult.data.total : 0;
+  const totalPages = storeResult.success ? storeResult.data.totalPages : 0;
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -27,6 +32,13 @@ export default async function AdminStoresPage({
         <h2 className="text-2xl font-bold tracking-tight text-zinc-900">Gestión de Corralones</h2>
         <p className="text-zinc-500 mt-1">Administra los corralones registrados en la plataforma. Puedes suspender accesos si inclumplen políticas.</p>
       </div>
+
+      {!storeResult.success && (
+        <ErrorBanner 
+          title="Atención" 
+          message="No se pudo cargar el listado de corralones debido a un problema de conexión. La tabla se muestra vacía." 
+        />
+      )}
 
       <div className="rounded-xl border border-zinc-200 bg-white shadow-sm overflow-hidden">
         {stores.length === 0 ? (

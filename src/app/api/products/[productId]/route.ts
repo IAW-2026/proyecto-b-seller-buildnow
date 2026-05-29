@@ -10,7 +10,11 @@ export async function GET(
   try {
     const { productId } = await params;
 
-    const product = await productRepo.findByIdWithCategory(productId);
+    const productResult = await productRepo.findByIdWithCategory(productId);
+    if (!productResult.success) {
+      return NextResponse.json({ error: productResult.error }, { status: 500 });
+    }
+    const product = productResult.data;
 
     if (!product) {
       return NextResponse.json({ error: 'Producto no encontrado' }, { status: 404 });

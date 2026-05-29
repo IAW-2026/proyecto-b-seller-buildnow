@@ -103,5 +103,5 @@ export async function registerSeller(formData: FormData): Promise<ActionResult> 
         return { success: false, error: 'Error al guardar los datos. Intentá de nuevo.' };
     }
 
-    return { success: true };
+    return { success: true, data: undefined };
 }

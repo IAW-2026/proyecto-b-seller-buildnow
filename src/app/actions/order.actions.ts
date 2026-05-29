@@ -21,7 +21,11 @@ export async function updateOrderStatusAction(orderId: string, newStatus: OrderS
   const { seller } = sellerCtx.data;
 
   const orderRepo = new PrismaOrderRepository();
-  const order = await orderRepo.findById(orderId);
+  const orderResult = await orderRepo.findById(orderId);
+  if (!orderResult.success) {
+    return { success: false, error: orderResult.error };
+  }
+  const order = orderResult.data;
 
   if (!order) {
     return { success: false, error: 'Orden no encontrada' };
@@ -39,9 +43,12 @@ export async function updateOrderStatusAction(orderId: string, newStatus: OrderS
     };
   }
 
-  await orderRepo.updateStatus(orderId, newStatus);
+  const updateResult = await orderRepo.updateStatus(orderId, newStatus);
+  if (!updateResult.success) {
+    return { success: false, error: updateResult.error };
+  }
 
   revalidatePath('/seller/dashboard/orders');
   revalidatePath('/seller/dashboard');
-  return { success: true };
+  return { success: true, data: undefined };
 }

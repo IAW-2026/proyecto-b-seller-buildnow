@@ -19,7 +19,11 @@ export async function getSellerContext(): Promise<SellerContextResult> {
   }
 
   const sellerRepo = new PrismaSellerRepository();
-  const seller = await sellerRepo.findById(userId);
+  const sellerResult = await sellerRepo.findById(userId);
+  if (!sellerResult.success) {
+    return { success: false, error: sellerResult.error };
+  }
+  const seller = sellerResult.data;
 
   if (!seller || !seller.storeId) {
     return { success: false, error: 'Tu cuenta no tiene una tienda asignada' };

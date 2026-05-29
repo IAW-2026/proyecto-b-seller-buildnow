@@ -1,11 +1,14 @@
 import { PrismaCategoryRepository } from '@/infrastructure/repositories/prisma/PrismaCategoryRepository';
 import { CategoryCreateForm, CategoryTableRow } from './CategoryClient';
 import { Tags } from 'lucide-react';
+import { ErrorBanner } from '@/components/ui/ErrorBanner';
 
 export default async function AdminCategoriesPage() {
 
   const categoryRepo = new PrismaCategoryRepository();
-  const categories = await categoryRepo.findAll();
+  const categoriesResult = await categoryRepo.findAll();
+  const categories = categoriesResult.success ? categoriesResult.data : [];
+  const hasError = !categoriesResult.success;
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -18,6 +21,13 @@ export default async function AdminCategoriesPage() {
       </div>
 
       <CategoryCreateForm />
+
+      {hasError && (
+        <ErrorBanner 
+          title="Atención" 
+          message="No se pudo cargar la lista de categorías actuales debido a un problema de conexión. La tabla se mostrará vacía temporalmente." 
+        />
+      )}
 
       <div className="rounded-xl border border-zinc-200 bg-white shadow-sm overflow-hidden mt-8">
         {categories.length === 0 ? (

@@ -42,5 +42,5 @@ export async function updateStoreAction(storeId: string, formData: FormData): Pr
   });
 
   revalidatePath('/seller/dashboard/store');
-  return { success: true };
+  return { success: true, data: undefined };
 }

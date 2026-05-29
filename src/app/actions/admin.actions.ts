@@ -24,5 +24,5 @@ export async function toggleStoreSuspensionAction(storeId: string, suspend: bool
 
   revalidatePath('/admin/dashboard/stores');
   revalidatePath(`/admin/dashboard/stores/${storeId}`);
-  return { success: true };
+  return { success: true, data: undefined };
 }

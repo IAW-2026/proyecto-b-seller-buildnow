@@ -76,7 +76,11 @@ export async function PATCH(
         return NextResponse.json({ error: authError }, { status: 403 });
       }
 
-      const currentOrder = await orderRepo.findById(id);
+      const currentOrderResult = await orderRepo.findById(id);
+      if (!currentOrderResult.success) {
+        return NextResponse.json({ error: currentOrderResult.error }, { status: 500 });
+      }
+      const currentOrder = currentOrderResult.data;
       if (!currentOrder) {
         return NextResponse.json({ error: 'Orden no encontrada' }, { status: 404 });
       }
@@ -88,14 +92,22 @@ export async function PATCH(
     }
 
 
-    const updatedOrder = await orderRepo.updateStatus(id, status);
+    const updatedOrderResult = await orderRepo.updateStatus(id, status);
+    if (!updatedOrderResult.success) {
+      return NextResponse.json({ error: updatedOrderResult.error }, { status: 500 });
+    }
+    const updatedOrder = updatedOrderResult.data;
 
     if (process.env.SKIP_AUTH !== 'true') {
       if (status === 'DELIVERED') {
         const { getToken } = await auth();
         const token = await getToken();
 
-        const currentOrder = await orderRepo.findById(id);
+        const currentOrderResult = await orderRepo.findById(id);
+        if (!currentOrderResult.success) {
+          return NextResponse.json({ error: currentOrderResult.error }, { status: 500 });
+        }
+        const currentOrder = currentOrderResult.data;
         if (!currentOrder) {
           return NextResponse.json({ error: 'Orden no encontrada' }, { status: 404 });
         }

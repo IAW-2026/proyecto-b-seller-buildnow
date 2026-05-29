@@ -3,10 +3,11 @@ import { APP_ROLES } from '@/core/auth/roles';
 import { PrismaOrderRepository } from '@/infrastructure/repositories/prisma/PrismaOrderRepository';
 import { PrismaStoreRepository } from '@/infrastructure/repositories/prisma/PrismaStoreRepository';
 import { OrderStatusBadge } from '@/app/seller/dashboard/orders/OrderStatusBadge';
-import { ShoppingCart } from 'lucide-react';
+import { ShoppingCart, Eye } from 'lucide-react';
 import Link from 'next/link';
 import { Pagination } from '@/components/ui/Pagination';
 import { StoreFilter } from './StoreFilter';
+import { ErrorBanner } from '@/components/ui/ErrorBanner';
 
 export default async function AdminOrdersPage({
   searchParams,
@@ -20,13 +21,19 @@ export default async function AdminOrdersPage({
 
   const orderRepo = new PrismaOrderRepository();
   const storeRepo = new PrismaStoreRepository();
-  
-  const [paginatedResult, stores] = await Promise.all([
-    orderRepo.findAll(page, PAGE_SIZE, storeId),
-    storeRepo.findAll()
-  ]);
-  
-  const { data: orders, total, totalPages } = paginatedResult;
+
+  const paginatedResult = await orderRepo.findAll(page, PAGE_SIZE, storeId);
+  const storeResult = await storeRepo.findAll();
+
+  const orders = paginatedResult.success ? paginatedResult.data.data : [];
+  const total = paginatedResult.success ? paginatedResult.data.total : 0;
+  const totalPages = paginatedResult.success ? paginatedResult.data.totalPages : 0;
+
+  const stores = storeResult.success ? storeResult.data : [];
+
+  const hasOrdersError = !paginatedResult.success;
+  const hasStoresError = !storeResult.success;
+  const hasAnyError = hasOrdersError || hasStoresError;
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -36,12 +43,19 @@ export default async function AdminOrdersPage({
           <p className="text-zinc-500 mt-1">Visor de todas las órdenes del sistema interactuando a lo largo de todos los corralones.</p>
         </div>
         <div className="flex-shrink-0">
-          <StoreFilter 
-            stores={stores.map(s => ({ id: s.id, name: s.name }))} 
-            currentStoreId={storeId} 
+          <StoreFilter
+            stores={stores.map(s => ({ id: s.id, name: s.name }))}
+            currentStoreId={storeId}
           />
         </div>
       </div>
+
+      {hasAnyError && (
+        <ErrorBanner
+          title="Atención"
+          message="No se pudieron cargar todos los datos (órdenes o corralones) debido a un problema de conexión."
+        />
+      )}
 
       <div className="rounded-xl border border-zinc-200 bg-white shadow-sm overflow-hidden">
         {orders.length === 0 ? (

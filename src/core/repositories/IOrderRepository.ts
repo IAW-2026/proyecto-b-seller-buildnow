@@ -1,4 +1,5 @@
 import { Order, OrderStatus } from '@prisma/client';
+import { ActionResult } from '../../types/action-result';
 
 export type CreateOrderInput = {
   buyerId: string;
@@ -60,12 +61,12 @@ export type PaginatedAdminOrders = {
 };
 
 export interface IOrderRepository {
-  findAll(page?: number, pageSize?: number, storeId?: string): Promise<PaginatedAdminOrders>;
-  countAll(): Promise<number>;
-  findById(id: string): Promise<Order | null>;
-  findByStore(storeId: string, page?: number, pageSize?: number, status?: string): Promise<PaginatedOrders>;
-  findPendingsPaymentsByStore(storeId: string): Promise<SellerOrderView[]>;
-  findReadyOrders(): Promise<ReadyOrderView[]>;
-  createWithItemsAndUpdateStock(data: CreateOrderInput): Promise<Order>;
-  updateStatus(id: string, status: OrderStatus): Promise<Order>;
+  findAll(page?: number, pageSize?: number, storeId?: string): Promise<ActionResult<PaginatedAdminOrders>>;
+  countAll(): Promise<ActionResult<number>>;
+  findById(id: string): Promise<ActionResult<Order | null>>;
+  findByStore(storeId: string, page?: number, pageSize?: number, status?: string): Promise<ActionResult<PaginatedOrders>>;
+  findPendingsPaymentsByStore(storeId: string): Promise<ActionResult<SellerOrderView[]>>;
+  findReadyOrders(): Promise<ActionResult<ReadyOrderView[]>>;
+  createWithItemsAndUpdateStock(data: CreateOrderInput): Promise<ActionResult<Order>>;
+  updateStatus(id: string, status: OrderStatus): Promise<ActionResult<Order>>;
 }

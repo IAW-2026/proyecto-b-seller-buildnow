@@ -1,7 +1,5 @@
 import { auth } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
-import { requireRole } from '@/core/auth/auth';
-import { APP_ROLES } from '@/core/auth/roles';
 import { PrismaSellerRepository } from '@/infrastructure/repositories/prisma/PrismaSellerRepository';
 import { PrismaOrderRepository } from '@/infrastructure/repositories/prisma/PrismaOrderRepository';
 import { PrismaProductRepository } from '@/infrastructure/repositories/prisma/PrismaProductRepository';
@@ -9,7 +7,7 @@ import { Package, TrendingUp, AlertCircle, ShoppingCart, ArrowRight } from "luci
 import Link from 'next/link';
 import { OrderStatusBadge } from './orders/OrderStatusBadge';
 import { MetricCard } from '@/components/ui/MetricCard';
-
+import { ErrorBanner } from '@/components/ui/ErrorBanner';
 async function getEarningsFromPaymentsApi(token: string): Promise<number | null> {
   const baseUrl = process.env.PAYMENTS_API_URL;
   if (!baseUrl) return 1000;
@@ -36,25 +34,32 @@ async function getEarningsFromPaymentsApi(token: string): Promise<number | null>
 const PAGE_SIZE = Number(process.env.ORDERS_PAGE_SIZE) || 10;
 
 export default async function DashboardPage() {
-  const roleCheck = await requireRole([APP_ROLES.SELLER]);
-  if (!roleCheck.success) redirect('/no-autorizado');
 
   const { userId, getToken } = await auth();
-  if (!userId) redirect('/sign-in');
 
   const sellerRepo = new PrismaSellerRepository();
-  const seller = await sellerRepo.findById(userId);
+  const sellerResult = await sellerRepo.findById(userId!);
+  if (!sellerResult.success) {
+    throw new Error(sellerResult.error);
+  }
+  const seller = sellerResult.data;
 
   if (!seller || !seller.storeId) redirect('/no-store');
 
   const orderRepo = new PrismaOrderRepository();
   const productRepo = new PrismaProductRepository();
 
-  const [{ data: orders }, products, pendingPaymentsOrders] = await Promise.all([
+  const [orderResult, productsResult, pendingPaymentsOrdersResult] = await Promise.all([
     orderRepo.findByStore(seller.storeId, 1, PAGE_SIZE),
     productRepo.findByStore(seller.storeId),
     orderRepo.findPendingsPaymentsByStore(seller.storeId),
   ]);
+
+  const orders = orderResult.success ? orderResult.data.data : [];
+  const pendingPaymentsOrders = pendingPaymentsOrdersResult.success ? pendingPaymentsOrdersResult.data : [];
+  const products = productsResult.success ? productsResult.data : [];
+
+  const hasPartialError = !orderResult.success || !pendingPaymentsOrdersResult.success || !productsResult.success;
 
 
   const token = await getToken();
@@ -67,6 +72,13 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+
+      {hasPartialError && (
+        <ErrorBanner 
+          title="Información parcial"
+          message="Algunos datos no pudieron cargarse correctamente en este momento. Estamos mostrando la información disponible." 
+        />
+      )}
 
       <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
         <div>

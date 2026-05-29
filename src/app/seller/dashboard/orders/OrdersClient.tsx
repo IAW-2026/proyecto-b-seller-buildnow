@@ -56,13 +56,25 @@ export function OrdersClient({
 
   const handleMarkReady = async (orderId: string) => {
     setLoadingOrderId(orderId);
-    const result = await updateOrderStatusAction(orderId, OrderStatus.READY);
-    setLoadingOrderId(null);
-    if (!result.success) {
-      toast.error(result.error);
-      return;
+
+    try {
+      const result = await updateOrderStatusAction(orderId, OrderStatus.READY);
+
+      if (!result.success) {
+        toast.error(result.error);
+        return;
+      }
+
+      toast.success('Orden marcada como lista exitosamente');
+
+      if (selectedOrder?.id === orderId) {
+        setSelectedOrder(null);
+      }
+    } catch (error) {
+      toast.error('Ocurrió un error inesperado de conexión.');
+    } finally {
+      setLoadingOrderId(null);
     }
-    toast.success('Orden marcada como lista exitosamente');
   };
 
   return (

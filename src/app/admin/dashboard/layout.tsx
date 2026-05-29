@@ -12,9 +12,6 @@ export default async function AdminDashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const roleCheck = await requireRole([APP_ROLES.ADMIN]);
-  if (!roleCheck.success) redirect('/no-autorizado');
-
   return (
     <div className="flex h-screen overflow-hidden bg-zinc-50 font-sans selection:bg-orange-500/30">
       <Sidebar role="ADMIN" />

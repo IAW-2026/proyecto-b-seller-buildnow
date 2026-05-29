@@ -1,47 +1,68 @@
 import prisma from '../../db/prisma';
 import { IOrderRepository, CreateOrderInput, PaginatedOrders, ReadyOrderView, SellerOrderView, PaginatedAdminOrders } from '../../../core/repositories/IOrderRepository';
 import { Order, OrderStatus } from '@prisma/client';
+import { ActionResult } from '../../../types/action-result';
 
 const MINUTOS_TO_WAIT_BEFORE_DELETE = 20;
 
 export class PrismaOrderRepository implements IOrderRepository {
-  async findAll(page = 1, pageSize = 10, storeId?: string): Promise<PaginatedAdminOrders> {
-    const skip = (page - 1) * pageSize;
-    const where = storeId ? { storeId } : {};
+  async findAll(page = 1, pageSize = 10, storeId?: string): Promise<ActionResult<PaginatedAdminOrders>> {
+    try {
+      const skip = (page - 1) * pageSize;
+      const where = storeId ? { storeId } : {};
 
-    const [orders, total] = await Promise.all([
-      prisma.order.findMany({
-        where,
-        orderBy: { createdAt: 'desc' },
-        include: {
-          store: {
-            select: { name: true }
+      const [orders, total] = await Promise.all([
+        prisma.order.findMany({
+          where,
+          orderBy: { createdAt: 'desc' },
+          include: {
+            store: {
+              select: { name: true }
+            },
           },
-        },
-        skip,
-        take: pageSize,
-      }),
-      prisma.order.count({ where }),
-    ]);
+          skip,
+          take: pageSize,
+        }),
+        prisma.order.count({ where }),
+      ]);
 
-    return {
-      data: orders as any,
-      total,
-      page,
-      pageSize,
-      totalPages: Math.ceil(total / pageSize),
-    };
+      return {
+        success: true,
+        data: {
+          data: orders as any,
+          total,
+          page,
+          pageSize,
+          totalPages: Math.ceil(total / pageSize),
+        }
+      };
+    } catch (error) {
+      console.error('[PrismaOrderRepository.findAll]', error);
+      return { success: false, error: 'Error al obtener las órdenes' };
+    }
   }
 
-  async countAll(): Promise<number> {
-    return prisma.order.count();
+  async countAll(): Promise<ActionResult<number>> {
+    try {
+      const count = await prisma.order.count();
+      return { success: true, data: count };
+    } catch (error) {
+      console.error('[PrismaOrderRepository.countAll]', error);
+      return { success: false, error: 'Error al contar las órdenes' };
+    }
   }
 
-  async findById(id: string): Promise<Order | null> {
-    return prisma.order.findUnique({
-      where: { id },
-      include: { items: true },
-    });
+  async findById(id: string): Promise<ActionResult<Order | null>> {
+    try {
+      const order = await prisma.order.findUnique({
+        where: { id },
+        include: { items: true },
+      });
+      return { success: true, data: order };
+    } catch (error) {
+      console.error('[PrismaOrderRepository.findById]', error);
+      return { success: false, error: 'Error al buscar la orden' };
+    }
   }
 
   private async expireStaleOrders(storeId: string): Promise<void> {
@@ -84,152 +105,189 @@ export class PrismaOrderRepository implements IOrderRepository {
     });
   }
 
-  async findByStore(storeId: string, page = 1, pageSize = 10, status?: string): Promise<PaginatedOrders> {
-    await this.expireStaleOrders(storeId);
+  async findByStore(storeId: string, page = 1, pageSize = 10, status?: string): Promise<ActionResult<PaginatedOrders>> {
+    try {
+      await this.expireStaleOrders(storeId);
 
-    const skip = (page - 1) * pageSize;
-    const where = {
-      storeId,
-      ...(status && status !== 'ALL' ? { status: status as OrderStatus } : {}),
-    };
+      const skip = (page - 1) * pageSize;
+      const where = {
+        storeId,
+        ...(status && status !== 'ALL' ? { status: status as OrderStatus } : {}),
+      };
 
-    const [orders, total] = await Promise.all([
-      prisma.order.findMany({
-        where,
+      const [orders, total] = await Promise.all([
+        prisma.order.findMany({
+          where,
+          include: {
+            items: {
+              include: { product: true },
+            },
+          },
+          orderBy: { createdAt: 'desc' },
+          skip,
+          take: pageSize,
+        }),
+        prisma.order.count({ where }),
+      ]);
+
+      return {
+        success: true,
+        data: {
+          data: orders.map(order => ({
+            id: order.id,
+            buyerId: order.buyerId,
+            status: order.status,
+            totalAmount: Number(order.totalAmount),
+            totalWeight: Number(order.totalWeight),
+            deliveryAddress: order.deliveryAddress,
+            items: order.items.map(item => ({
+              id: item.id,
+              productId: item.productId,
+              productName: item.product.name,
+              quantity: item.quantity,
+              price: Number(item.price),
+            })),
+            createdAt: order.createdAt.toISOString(),
+            updatedAt: order.updatedAt.toISOString(),
+          })),
+          total,
+          page,
+          pageSize,
+          totalPages: Math.ceil(total / pageSize),
+        }
+      };
+    } catch (error) {
+      console.error('[PrismaOrderRepository.findByStore]', error);
+      return { success: false, error: 'Error al obtener las órdenes de la tienda' };
+    }
+  }
+
+  async findPendingsPaymentsByStore(storeId: string): Promise<ActionResult<SellerOrderView[]>> {
+    try {
+      await this.expireStaleOrders(storeId);
+
+      const orders = await prisma.order.findMany({
+        where: {
+          storeId,
+          status: {
+            in: [OrderStatus.PENDING_PAYMENT, OrderStatus.CONFIRMED],
+          },
+        },
         include: {
           items: {
             include: { product: true },
           },
         },
         orderBy: { createdAt: 'desc' },
-        skip,
-        take: pageSize,
-      }),
-      prisma.order.count({ where }),
-    ]);
+      });
 
-    return {
-      data: orders.map(order => ({
-        id: order.id,
-        buyerId: order.buyerId,
-        status: order.status,
-        totalAmount: Number(order.totalAmount),
-        totalWeight: Number(order.totalWeight),
-        deliveryAddress: order.deliveryAddress,
-        items: order.items.map(item => ({
-          id: item.id,
-          productId: item.productId,
-          productName: item.product.name,
-          quantity: item.quantity,
-          price: Number(item.price),
-        })),
-        createdAt: order.createdAt.toISOString(),
-        updatedAt: order.updatedAt.toISOString(),
-      })),
-      total,
-      page,
-      pageSize,
-      totalPages: Math.ceil(total / pageSize),
-    };
+      return {
+        success: true,
+        data: orders.map(order => ({
+          id: order.id,
+          buyerId: order.buyerId,
+          status: order.status,
+          totalAmount: Number(order.totalAmount),
+          totalWeight: Number(order.totalWeight),
+          deliveryAddress: order.deliveryAddress,
+          items: order.items.map(item => ({
+            id: item.id,
+            productId: item.productId,
+            productName: item.product.name,
+            quantity: item.quantity,
+            price: Number(item.price),
+          })),
+          createdAt: order.createdAt.toISOString(),
+          updatedAt: order.updatedAt.toISOString(),
+        }))
+      };
+    } catch (error) {
+      console.error('[PrismaOrderRepository.findPendingsPaymentsByStore]', error);
+      return { success: false, error: 'Error al buscar órdenes pendientes' };
+    }
   }
 
-  async findPendingsPaymentsByStore(storeId: string): Promise<SellerOrderView[]> {
-    await this.expireStaleOrders(storeId);
-
-    const orders = await prisma.order.findMany({
-      where: {
-        storeId,
-        status: {
-          in: [OrderStatus.PENDING_PAYMENT, OrderStatus.CONFIRMED],
-        },
-      },
-      include: {
-        items: {
-          include: { product: true },
-        },
-      },
-      orderBy: { createdAt: 'desc' },
-    });
-
-    return orders.map(order => ({
-      id: order.id,
-      buyerId: order.buyerId,
-      status: order.status,
-      totalAmount: Number(order.totalAmount),
-      totalWeight: Number(order.totalWeight),
-      deliveryAddress: order.deliveryAddress,
-      items: order.items.map(item => ({
-        id: item.id,
-        productId: item.productId,
-        productName: item.product.name,
-        quantity: item.quantity,
-        price: Number(item.price),
-      })),
-      createdAt: order.createdAt.toISOString(),
-      updatedAt: order.updatedAt.toISOString(),
-    }));
-  }
-
-  async findReadyOrders(): Promise<ReadyOrderView[]> {
-    const orders = await prisma.order.findMany({
-      where: { status: OrderStatus.READY },
-      include: {
-        store: true,
-        items: true,
-      },
-    });
-
-    return orders.map(order => ({
-      id: order.id,
-      storeName: order.store.name,
-      storeAddress: order.store.address,
-      deliveryAddress: order.deliveryAddress,
-      totalWeight: Number(order.totalWeight),
-      totalItems: order.items.reduce((sum, item) => sum + item.quantity, 0),
-      createdAt: order.createdAt.toISOString(),
-    }));
-  }
-
-  async createWithItemsAndUpdateStock(data: CreateOrderInput): Promise<Order> {
-    return prisma.$transaction(async (tx) => {
-      const order = await tx.order.create({
-        data: {
-          buyerId: data.buyerId,
-          storeId: data.storeId,
-          deliveryAddress: data.deliveryAddress,
-          totalAmount: data.totalAmount,
-          totalWeight: data.totalWeight,
-          status: 'PENDING_PAYMENT',
-          items: {
-            create: data.items,
-          },
+  async findReadyOrders(): Promise<ActionResult<ReadyOrderView[]>> {
+    try {
+      const orders = await prisma.order.findMany({
+        where: { status: OrderStatus.READY },
+        include: {
+          store: true,
+          items: true,
         },
       });
 
-      await Promise.all(
-        data.items.map(({ productId, quantity }) =>
-          tx.product.update({
-            where: { id: productId },
-            data: { stock: { decrement: quantity } },
-          }).then((updated) =>
-            updated.stock <= 0
-              ? tx.product.update({
-                where: { id: productId },
-                data: { available: false },
-              })
-              : Promise.resolve(updated)
-          )
-        )
-      );
-
-      return order;
-    });
+      return {
+        success: true,
+        data: orders.map(order => ({
+          id: order.id,
+          storeName: order.store.name,
+          storeAddress: order.store.address,
+          deliveryAddress: order.deliveryAddress,
+          totalWeight: Number(order.totalWeight),
+          totalItems: order.items.reduce((sum, item) => sum + item.quantity, 0),
+          createdAt: order.createdAt.toISOString(),
+        }))
+      };
+    } catch (error) {
+      console.error('[PrismaOrderRepository.findReadyOrders]', error);
+      return { success: false, error: 'Error al obtener las órdenes listas' };
+    }
   }
 
-  async updateStatus(id: string, status: OrderStatus): Promise<Order> {
-    return prisma.order.update({
-      where: { id },
-      data: { status },
-    });
+  async createWithItemsAndUpdateStock(data: CreateOrderInput): Promise<ActionResult<Order>> {
+    try {
+      const order = await prisma.$transaction(async (tx) => {
+        const newOrder = await tx.order.create({
+          data: {
+            buyerId: data.buyerId,
+            storeId: data.storeId,
+            deliveryAddress: data.deliveryAddress,
+            totalAmount: data.totalAmount,
+            totalWeight: data.totalWeight,
+            status: 'PENDING_PAYMENT',
+            items: {
+              create: data.items,
+            },
+          },
+        });
+
+        await Promise.all(
+          data.items.map(({ productId, quantity }) =>
+            tx.product.update({
+              where: { id: productId },
+              data: { stock: { decrement: quantity } },
+            }).then((updated) =>
+              updated.stock <= 0
+                ? tx.product.update({
+                  where: { id: productId },
+                  data: { available: false },
+                })
+                : Promise.resolve(updated)
+            )
+          )
+        );
+
+        return newOrder;
+      });
+
+      return { success: true, data: order };
+    } catch (error) {
+      console.error('[PrismaOrderRepository.createWithItemsAndUpdateStock]', error);
+      return { success: false, error: 'Error al crear la orden y actualizar el stock' };
+    }
+  }
+
+  async updateStatus(id: string, status: OrderStatus): Promise<ActionResult<Order>> {
+    try {
+      const order = await prisma.order.update({
+        where: { id },
+        data: { status },
+      });
+      return { success: true, data: order };
+    } catch (error) {
+      console.error('[PrismaOrderRepository.updateStatus]', error);
+      return { success: false, error: 'Error al actualizar el estado de la orden' };
+    }
   }
 }

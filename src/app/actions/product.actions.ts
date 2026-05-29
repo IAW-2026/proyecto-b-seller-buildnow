@@ -28,13 +28,17 @@ export async function searchStoreProductsAction(params: {
   }
 
   const productRepo = new PrismaProductRepository();
-  const result = await productRepo.findPaginatedByStore({
+  const resultObj = await productRepo.findPaginatedByStore({
     storeId: params.storeId,
     categoryId: params.categoryId,
     search: params.search,
     pageNumber: params.pageNumber,
     pageSize: params.pageSize,
   });
+  if (!resultObj.success) {
+    return { success: false as const, error: resultObj.error };
+  }
+  const result = resultObj.data;
 
   const data = result.data.map(product => ({
     id: product.id,
@@ -101,7 +105,7 @@ export async function createProductAction(formData: FormData): Promise<ActionRes
   });
 
   revalidatePath('/seller/dashboard/products');
-  return { success: true };
+  return { success: true, data: undefined };
 }
 
 export async function updateProductAction(productId: string, formData: FormData): Promise<ActionResult> {
@@ -114,7 +118,11 @@ export async function updateProductAction(productId: string, formData: FormData)
 
   const productRepo = new PrismaProductRepository();
 
-  const existingProduct = await productRepo.findById(productId);
+  const existingProductResult = await productRepo.findById(productId);
+  if (!existingProductResult.success) {
+    return { success: false, error: existingProductResult.error };
+  }
+  const existingProduct = existingProductResult.data;
   if (!existingProduct || existingProduct.storeId !== seller.storeId) {
     return { success: false, error: 'Producto no encontrado o no tenés permisos para editarlo' };
   }
@@ -155,7 +163,7 @@ export async function updateProductAction(productId: string, formData: FormData)
   });
 
   revalidatePath('/seller/dashboard/products');
-  return { success: true };
+  return { success: true, data: undefined };
 }
 
 export async function deleteProductAction(productId: string): Promise<ActionResult> {
@@ -168,7 +176,11 @@ export async function deleteProductAction(productId: string): Promise<ActionResu
 
   const productRepo = new PrismaProductRepository();
 
-  const existingProduct = await productRepo.findById(productId);
+  const existingProductResult = await productRepo.findById(productId);
+  if (!existingProductResult.success) {
+    return { success: false, error: existingProductResult.error };
+  }
+  const existingProduct = existingProductResult.data;
   if (!existingProduct || existingProduct.storeId !== seller.storeId) {
     return { success: false, error: 'Producto no encontrado o no tenés permisos para borrarlo' };
   }
@@ -178,7 +190,7 @@ export async function deleteProductAction(productId: string): Promise<ActionResu
   await productRepo.delete(productId);
 
   revalidatePath('/seller/dashboard/products');
-  return { success: true };
+  return { success: true, data: undefined };
 }
 
 

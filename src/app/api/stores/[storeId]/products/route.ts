@@ -10,7 +10,11 @@ export async function GET(
   try {
     const { storeId } = await params;
 
-    const products = await productRepo.findByStore(storeId);
+    const productsResult = await productRepo.findByStore(storeId);
+    if (!productsResult.success) {
+      return NextResponse.json({ error: productsResult.error }, { status: 500 });
+    }
+    const products = productsResult.data;
 
     const response = products.map(product => ({
       id: product.id,

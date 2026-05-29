@@ -18,8 +18,11 @@ export async function GET(request: NextRequest) {
     const status = request.nextUrl.searchParams.get('status');
 
     if (status === 'READY') {
-      const orders = await orderRepo.findReadyOrders();
-      return NextResponse.json(orders);
+      const result = await orderRepo.findReadyOrders();
+      if (!result.success) {
+        return NextResponse.json({ error: result.error }, { status: 500 });
+      }
+      return NextResponse.json(result.data);
     }
 
     return NextResponse.json({ error: 'Parámetro status requerido' }, { status: 400 });
@@ -67,13 +70,17 @@ export async function POST(request: NextRequest) {
     }
 
     const productIds = items.map((item: ItemInput) => item.productId);
-    const products = await productRepo.findManyByIds(productIds);
+    const productsResult = await productRepo.findManyByIds(productIds);
+    if (!productsResult.success) {
+      return NextResponse.json({ error: productsResult.error }, { status: 500 });
+    }
+    const products = productsResult.data;
 
     const productsMap = new Map(products.map(p => [p.id, p]));
 
     const { totalAmount, totalWeight, orderItems } = calcularTotalesYArmarItems(items, productsMap);
 
-    const order = await orderRepo.createWithItemsAndUpdateStock({
+    const orderResult = await orderRepo.createWithItemsAndUpdateStock({
       buyerId,
       storeId,
       deliveryAddress,
@@ -81,6 +88,11 @@ export async function POST(request: NextRequest) {
       totalWeight,
       items: orderItems
     });
+
+    if (!orderResult.success) {
+      return NextResponse.json({ error: orderResult.error }, { status: 500 });
+    }
+    const order = orderResult.data;
 
     return NextResponse.json({
       id: order.id,

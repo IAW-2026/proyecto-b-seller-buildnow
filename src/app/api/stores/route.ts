@@ -23,11 +23,17 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const result = await storeRepo.findPaginated({
+    const storeResult = await storeRepo.findPaginated({
       pageNumber,
       pageSize,
       isAdmin,
     });
+
+    if (!storeResult.success) {
+      return NextResponse.json({ error: storeResult.error }, { status: 500 });
+    }
+
+    const result = storeResult.data;
 
     const data = result.data.map(store => ({
       id: store.id,

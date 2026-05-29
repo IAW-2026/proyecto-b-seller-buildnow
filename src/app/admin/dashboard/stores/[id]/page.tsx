@@ -6,8 +6,9 @@ import { PrismaOrderRepository } from '@/infrastructure/repositories/prisma/Pris
 import { PAGE_SIZE } from '@/core/config/pagination';
 import { Pagination } from '@/components/ui/Pagination';
 import { notFound } from 'next/navigation';
-import { ArrowLeft, Package, MapPin, Calendar, ShieldAlert } from 'lucide-react';
+import { Calendar, MapPin, Phone, Mail, FileText, Package, AlertTriangle, CheckCircle, Ban, ArrowLeft, ShieldAlert } from 'lucide-react';
 import Link from 'next/link';
+import { ErrorBanner } from '@/components/ui/ErrorBanner';
 
 export default async function AdminStoreDetailPage({
   params,
@@ -23,17 +24,25 @@ export default async function AdminStoreDetailPage({
   const storeRepo = new PrismaStoreRepository();
   const productRepo = new PrismaProductRepository();
 
-  const store = await storeRepo.findById(id);
+  const storeResult = await storeRepo.findById(id);
+  if (!storeResult.success) {
+    throw new Error(storeResult.error);
+  }
+  const store = storeResult.data;
 
   if (!store) {
     notFound();
   }
 
-  const { data: products, total, totalPages } = await productRepo.findPaginatedByStore({
+  const paginatedResult = await productRepo.findPaginatedByStore({
     storeId: id,
     pageNumber: currentPage,
     pageSize: PAGE_SIZE,
   });
+
+  const products = paginatedResult.success ? paginatedResult.data.data : [];
+  const total = paginatedResult.success ? paginatedResult.data.total : 0;
+  const totalPages = paginatedResult.success ? paginatedResult.data.totalPages : 0;
 
   const isSuspended = store.status === 'SUSPENDED';
 
@@ -98,6 +107,15 @@ export default async function AdminStoreDetailPage({
           Catálogo Activo
         </h3>
 
+        {!paginatedResult.success && (
+          <div className="mb-4">
+            <ErrorBanner
+              title="Atención"
+              message="No se pudo cargar el catálogo de productos debido a un problema de conexión."
+            />
+          </div>
+        )}
+
         <div className="rounded-xl border border-zinc-200 bg-white shadow-sm overflow-hidden">
           {products.length === 0 ? (
             <div className="p-8 text-center text-zinc-500 text-sm">Este corralón aún no ha cargado productos.</div>
@@ -121,11 +139,10 @@ export default async function AdminStoreDetailPage({
                         ${Number(p.price).toLocaleString('es-AR')}
                       </td>
                       <td className="px-6 py-3 text-sm">
-                        <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
-                          p.stock > 0
+                        <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${p.stock > 0
                             ? 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-600/20'
                             : 'bg-red-50 text-red-700 ring-1 ring-red-600/20'
-                        }`}>
+                          }`}>
                           {p.stock} un.
                         </span>
                       </td>
@@ -146,4 +163,4 @@ export default async function AdminStoreDetailPage({
 
     </div>
   );
-}
+}

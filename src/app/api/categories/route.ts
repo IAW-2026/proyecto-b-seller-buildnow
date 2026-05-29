@@ -5,7 +5,11 @@ const categoryRepo = new PrismaCategoryRepository();
 
 export async function GET() {
   try {
-    const categories = await categoryRepo.findAll();
+    const categoriesResult = await categoryRepo.findAll();
+    if (!categoriesResult.success) {
+      return NextResponse.json({ error: categoriesResult.error }, { status: 500 });
+    }
+    const categories = categoriesResult.data;
 
     const response = categories.map(category => ({
       id: category.id,

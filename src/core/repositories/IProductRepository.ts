@@ -1,4 +1,5 @@
 import { Product } from '@prisma/client';
+import { ActionResult } from '../../types/action-result';
 
 export type ProductWithCategory = Product & {
   categoryName: string;
@@ -24,16 +25,16 @@ export interface PaginatedProducts {
 }
 
 export interface IProductRepository {
-  findById(id: string): Promise<Product | null>;
-  findByIdWithCategory(id: string): Promise<ProductWithCategory | null>;
-  findByStore(storeId: string): Promise<ProductWithCategory[]>;
-  findByCategory(categoryId: string): Promise<ProductWithCategory[]>;
-  findAll(categoryId?: string): Promise<ProductWithCategory[]>;
-  countAll(): Promise<number>;
-  findPaginated(options: SearchProductsOptions): Promise<PaginatedProducts>;
-  findPaginatedByStore(options: SearchStoreProductsOptions): Promise<PaginatedProducts>;
-  findManyByIds(ids: string[]): Promise<Product[]>;
-  create(data: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>): Promise<Product>;
-  update(id: string, data: Partial<Product>): Promise<Product>;
-  delete(id: string): Promise<void>;
+  findById(id: string): Promise<ActionResult<Product | null>>;
+  findByIdWithCategory(id: string): Promise<ActionResult<ProductWithCategory | null>>;
+  findByStore(storeId: string): Promise<ActionResult<ProductWithCategory[]>>;
+  findByCategory(categoryId: string): Promise<ActionResult<ProductWithCategory[]>>;
+  findAll(categoryId?: string): Promise<ActionResult<ProductWithCategory[]>>;
+  countAll(): Promise<ActionResult<number>>;
+  findPaginated(options: SearchProductsOptions): Promise<ActionResult<PaginatedProducts>>;
+  findPaginatedByStore(options: SearchStoreProductsOptions): Promise<ActionResult<PaginatedProducts>>;
+  findManyByIds(ids: string[]): Promise<ActionResult<Product[]>>;
+  create(data: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>): Promise<ActionResult<Product>>;
+  update(id: string, data: Partial<Product>): Promise<ActionResult<Product>>;
+  delete(id: string): Promise<ActionResult<void>>;
 }

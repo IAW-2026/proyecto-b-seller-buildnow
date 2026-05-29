@@ -15,13 +15,17 @@ export function CategoryCreateForm() {
     const form = e.currentTarget;
 
     startTransition(async () => {
-      const result = await createCategoryAction(formData);
-      if (!result.success) {
-        toast.error(result.error);
-        return;
+      try {
+        const result = await createCategoryAction(formData);
+        if (!result.success) {
+          toast.error(result.error);
+          return;
+        }
+        form.reset();
+        toast.success('Categoría creada con éxito');
+      } catch (error) {
+        toast.error('Ocurrió un error inesperado al intentar crear la categoría.');
       }
-      form.reset();
-      toast.success('Categoría creada con éxito');
     });
   };
 
@@ -57,13 +61,18 @@ export function CategoryDeleteButton({ id }: { id: string }) {
 
   const handleConfirmDelete = () => {
     startTransition(async () => {
-      const result = await deleteCategoryAction(id);
-      if (!result.success) {
-        toast.error(result.error);
-        return;
+      try {
+        const result = await deleteCategoryAction(id);
+        if (!result.success) {
+          toast.error(result.error);
+          return;
+        }
+        toast.success('Categoría eliminada con éxito');
+      } catch (error) {
+        toast.error('Ocurrió un error inesperado al intentar eliminar la categoría.');
+      } finally {
+        setIsModalOpen(false);
       }
-      toast.success('Categoría eliminada con éxito');
-      setIsModalOpen(false);
     });
   };
 
@@ -99,13 +108,17 @@ export function CategoryTableRow({ category }: { category: { id: string, name: s
     const formData = new FormData(e.currentTarget);
 
     startTransition(async () => {
-      const result = await updateCategoryAction(category.id, formData);
-      if (!result.success) {
-        toast.error(result.error);
-        return;
+      try {
+        const result = await updateCategoryAction(category.id, formData);
+        if (!result.success) {
+          toast.error(result.error);
+          return;
+        }
+        setIsEditing(false);
+        toast.success('Categoría actualizada con éxito');
+      } catch (error) {
+        toast.error('Ocurrió un error inesperado al intentar actualizar la categoría.');
       }
-      setIsEditing(false);
-      toast.success('Categoría actualizada con éxito');
     });
   };
 

@@ -7,21 +7,23 @@ import { PrismaStoreRepository } from '@/infrastructure/repositories/prisma/Pris
 import { StoreClient } from './StoreClient';
 
 export default async function StorePage() {
-  const roleCheck = await requireRole([APP_ROLES.SELLER]);
-  if (!roleCheck.success) redirect('/no-autorizado');
-
   const { userId } = await auth();
-  if (!userId) {
-    redirect('/sign-in');
-  }
 
   const sellerRepo = new PrismaSellerRepository();
-  const seller = await sellerRepo.findById(userId);
+  const sellerResult = await sellerRepo.findById(userId!);
+  if (!sellerResult.success) {
+    throw new Error(sellerResult.error);
+  }
+  const seller = sellerResult.data;
 
   if (!seller || !seller.storeId) redirect('/no-store');
 
   const storeRepo = new PrismaStoreRepository();
-  const store = await storeRepo.findById(seller.storeId);
+  const storeResult = await storeRepo.findById(seller.storeId);
+  if (!storeResult.success) {
+    throw new Error(storeResult.error);
+  }
+  const store = storeResult.data;
 
   if (!store) redirect('/sign-in');
 

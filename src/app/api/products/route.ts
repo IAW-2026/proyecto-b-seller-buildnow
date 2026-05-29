@@ -14,12 +14,16 @@ export async function GET(request: NextRequest) {
     const pageNumber = pageNumberParam ? parseInt(pageNumberParam, 10) : 1;
     const pageSize = pageSizeParam ? parseInt(pageSizeParam, 10) : 10;
 
-    const result = await productRepo.findPaginated({
+    const productResult = await productRepo.findPaginated({
       categoryId,
       search,
       pageNumber,
       pageSize
     });
+    if (!productResult.success) {
+      return NextResponse.json({ error: productResult.error }, { status: 500 });
+    }
+    const result = productResult.data;
 
     const data = result.data.map(product => ({
       id: product.id,

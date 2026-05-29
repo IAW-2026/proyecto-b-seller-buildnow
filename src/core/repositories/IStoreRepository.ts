@@ -1,4 +1,5 @@
 import { Store, StoreStatus } from '@prisma/client';
+import { ActionResult } from '../../types/action-result';
 
 export interface SearchStoresOptions {
   pageNumber: number;
@@ -15,11 +16,11 @@ export interface PaginatedStores {
 }
 
 export interface IStoreRepository {
-  findAll(): Promise<Store[]>;
-  countByStatus(statuses: StoreStatus[]): Promise<number>;
-  findPaginated(options: SearchStoresOptions): Promise<PaginatedStores>;
-  findById(id: string): Promise<Store | null>;
-  findBySellerId(sellerId: string): Promise<Store | null>;
-  create(data: Omit<Store, 'id' | 'createdAt' | 'updatedAt'>): Promise<Store>;
-  update(id: string, data: Partial<Store>): Promise<Store>;
+  findAll(): Promise<ActionResult<Store[]>>;
+  countByStatus(statuses: StoreStatus[]): Promise<ActionResult<number>>;
+  findPaginated(options: SearchStoresOptions): Promise<ActionResult<PaginatedStores>>;
+  findById(id: string): Promise<ActionResult<Store | null>>;
+  findBySellerId(sellerId: string): Promise<ActionResult<Store | null>>;
+  create(data: Omit<Store, 'id' | 'createdAt' | 'updatedAt'>): Promise<ActionResult<Store>>;
+  update(id: string, data: Partial<Store>): Promise<ActionResult<Store>>;
 }
