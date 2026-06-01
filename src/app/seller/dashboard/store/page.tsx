@@ -1,7 +1,5 @@
 import { auth } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
-import { requireRole } from '@/core/auth/auth';
-import { APP_ROLES } from '@/core/auth/roles';
 import { PrismaSellerRepository } from '@/infrastructure/repositories/prisma/PrismaSellerRepository';
 import { PrismaStoreRepository } from '@/infrastructure/repositories/prisma/PrismaStoreRepository';
 import { StoreClient } from './StoreClient';

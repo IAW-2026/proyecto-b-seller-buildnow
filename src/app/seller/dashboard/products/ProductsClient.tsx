@@ -11,18 +11,12 @@ import { ProductsTable } from './ProductsTable';
 import { createProductAction, updateProductAction, deleteProductAction, searchStoreProductsAction } from '@/app/actions/product.actions';
 import { PAGE_SIZE } from '@/core/config/pagination';
 import toast from 'react-hot-toast';
+import { PaginationMeta } from '@/types/pagination';
 
 export type SerializedProduct = Omit<ProductWithCategory, 'price' | 'weight'> & {
   price: number;
   weight: number;
 };
-
-interface PaginationMeta {
-  total: number;
-  page: number;
-  pageSize: number;
-  totalPages: number;
-}
 
 export function ProductsClient({
   initialProducts,

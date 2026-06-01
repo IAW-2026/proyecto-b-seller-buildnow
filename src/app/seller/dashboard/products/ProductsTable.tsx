@@ -3,13 +3,7 @@
 import { Edit2, Trash2 } from 'lucide-react';
 import { Pagination } from '@/components/ui/Pagination';
 import { SerializedProduct } from './ProductsClient';
-
-interface PaginationMeta {
-  total: number;
-  page: number;
-  pageSize: number;
-  totalPages: number;
-}
+import { PaginationMeta } from '@/types/pagination';
 
 interface ProductsTableProps {
   products: SerializedProduct[];

@@ -28,7 +28,6 @@ export interface IProductRepository {
   findById(id: string): Promise<ActionResult<Product | null>>;
   findByIdWithCategory(id: string): Promise<ActionResult<ProductWithCategory | null>>;
   findByStore(storeId: string): Promise<ActionResult<ProductWithCategory[]>>;
-  findByCategory(categoryId: string): Promise<ActionResult<ProductWithCategory[]>>;
   findAll(categoryId?: string): Promise<ActionResult<ProductWithCategory[]>>;
   countAll(): Promise<ActionResult<number>>;
   findPaginated(options: SearchProductsOptions): Promise<ActionResult<PaginatedProducts>>;

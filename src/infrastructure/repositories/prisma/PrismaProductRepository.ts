@@ -53,23 +53,6 @@ export class PrismaProductRepository implements IProductRepository {
     }
   }
 
-  async findByCategory(categoryId: string): Promise<ActionResult<ProductWithCategory[]>> {
-    try {
-      const products = await prisma.product.findMany({
-        where: { categoryId },
-        include: { category: true },
-      });
-
-      return {
-        success: true,
-        data: products.map(p => ({ ...p, categoryName: p.category.name }))
-      };
-    } catch (error) {
-      console.error('[PrismaProductRepository.findByCategory]', error);
-      return { success: false, error: 'Error al buscar productos por categoría' };
-    }
-  }
-
   async findAll(categoryId?: string): Promise<ActionResult<ProductWithCategory[]>> {
     try {
       const where = categoryId ? { categoryId } : {};
