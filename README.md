@@ -19,11 +19,9 @@ Para acceder a la aplicación puedes usar las siguientes cuentas de prueba:
 - **Email:** `seller1@gmail.com`
 - **Contraseña:** `cuenta_seller`
 
-*(Nota: También puedes registrarte como nuevo vendedor directamente en la aplicación).*
-
 ## ⚙️ Configuración Local (.env)
 
-Si deseas correr el proyecto localmente, configura las siguientes variables en tu archivo `.env`:
+Para correr el proyecto localmente, configura las siguientes variables en tu archivo `.env`:
 
 ```env
 # Base de datos
