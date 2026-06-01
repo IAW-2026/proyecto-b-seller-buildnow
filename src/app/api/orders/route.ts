@@ -33,13 +33,21 @@ export async function GET(request: NextRequest) {
 }
 
 
-function calcularTotalesYArmarItems(items: ItemInput[], productsMap: Map<string, Product>) {
+function calcularTotalesYArmarItems(items: ItemInput[], productsMap: Map<string, Product>, storeId: string) {
   let totalAmount = 0;
   let totalWeight = 0;
 
   const orderItems = items.map(item => {
     const product = productsMap.get(item.productId);
     if (!product) throw new Error(`Producto ${item.productId} no encontrado`);
+
+    if (product.storeId !== storeId) {
+      throw new Error(`El producto "${product.name}" no pertenece a la tienda proveída`);
+    }
+
+    if (!product.available) {
+      throw new Error(`El producto "${product.name}" no está disponible`);
+    }
 
     if (product.stock < item.quantity) {
       throw new Error(`Stock insuficiente para "${product.name}"`);
@@ -78,7 +86,7 @@ export async function POST(request: NextRequest) {
 
     const productsMap = new Map(products.map(p => [p.id, p]));
 
-    const { totalAmount, totalWeight, orderItems } = calcularTotalesYArmarItems(items, productsMap);
+    const { totalAmount, totalWeight, orderItems } = calcularTotalesYArmarItems(items, productsMap, storeId);
 
     const orderResult = await orderRepo.createWithItemsAndUpdateStock({
       buyerId,
