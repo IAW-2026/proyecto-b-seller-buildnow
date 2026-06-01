@@ -187,7 +187,7 @@ export function RegisterSellerForm() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     className="block w-full rounded-xl border border-gray-200 bg-white py-2.5 pl-9 pr-10 text-sm text-gray-900 placeholder:text-gray-400 focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-100 transition-all"
-                    placeholder="Mínimo 8 caracteres"
+                    placeholder="Mínimo 4 caracteres"
                   />
                   <button
                     type="button"

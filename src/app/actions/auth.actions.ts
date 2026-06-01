@@ -20,8 +20,8 @@ function parseSellerFormData(formData: FormData) {
 function validateSellerInput(data: ReturnType<typeof parseSellerFormData>): string | null {
     if (!data.firstName || !data.lastName || !data.email || !data.password || !data.storeName || !data.storeAddress)
         return 'Todos los campos obligatorios deben completarse.';
-    if (data.password.length < 8)
-        return 'La contraseña debe tener al menos 8 caracteres.';
+    if (data.password.length < 4)
+        return 'La contraseña debe tener al menos 4 caracteres.';
     return null;
 }
 
