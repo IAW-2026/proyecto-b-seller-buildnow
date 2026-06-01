@@ -198,7 +198,7 @@ export function RegisterSellerForm() {
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
-                <p className="mt-1.5 text-xs text-gray-400">Al menos 8 caracteres.</p>
+                <p className="mt-1.5 text-xs text-gray-400">Al menos 4 caracteres.</p>
               </div>
 
               <button
