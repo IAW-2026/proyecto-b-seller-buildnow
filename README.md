@@ -12,12 +12,12 @@ Aplicación **Seller** del Proyecto IAW 2026. Esta plataforma permite a los vend
 Para acceder a la aplicación puedes usar las siguientes cuentas de prueba:
 
 ### 1. Administrador (Admin)
-- **Email:** `admin@gmail.com`
-- **Contraseña:** `cuenta_admin`
+- **Email:** `admin+clerktest@iaw.com`
+- **Contraseña:** `iawuser#`
 
 ### 2. Vendedor (Seller)
-- **Email:** `seller1@gmail.com`
-- **Contraseña:** `cuenta_seller`
+- **Email:** `seller+clerktest@iaw.com`
+- **Contraseña:** `iawuser#`
 
 ## ⚙️ Configuración Local (.env)
 
