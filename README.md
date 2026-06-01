@@ -49,13 +49,16 @@ DEVELOPMENT=true
 
 ## Consideraciones
 Se tomo la decision de hacer una limpieza de aquellas ordenes cuyos pagos esten en pendiente y hayan superado los 20 minutos sin confirmar. Por lo que al entrar a la aplicacion puede que no existan ordenes en estado PENDING_PAYMENT. Para poder probar este estado hay que hacer una petición al endpoint: 
-[POST] https://proyecto-b-seller-buildnow.vercel.app/api/orders
-Request:
+**`POST`** `https://proyecto-b-seller-buildnow.vercel.app/api/orders`
+
+**Request:**
+```json
 {
-    "buyerId":"Cualquiera",
+    "buyerId": "Cualquiera",
     "storeId": "1a65cc40-3f58-40aa-b788-e98a3682d933",
     "deliveryAddress": "Cualquiera",
     "items": [
-        { "productId": "e71d7101-b4d0-4c60-9246-883ca930cf3e", "quantity": 1}
+        { "productId": "e71d7101-b4d0-4c60-9246-883ca930cf3e", "quantity": 1 }
     ]
 }
+```
