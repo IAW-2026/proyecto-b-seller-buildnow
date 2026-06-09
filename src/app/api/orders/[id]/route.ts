@@ -20,36 +20,6 @@ const ROLE_ALLOWED_STATUSES: Record<string, string[]> = {
 };
 
 
-async function triggerPayouts(
-  order: { id: string; storeId: string; totalAmount: number },
-  token: string
-) {
-  if (process.env.DEVELOPMENT) {
-    console.log('[MOCK] Triggering payouts for order:', {
-      orderId: order.id,
-      recipientId: order.storeId,
-      recipientType: 'SELLER',
-      amount: order.totalAmount,
-    });
-    return;
-  }
-
-  const PAYMENTS_API = process.env.PAYMENTS_API_URL;
-
-  await fetch(`${PAYMENTS_API}/api/payments/payouts`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify({
-      orderId: order.id,
-      recipientId: order.storeId,
-      recipientType: 'SELLER',
-      amount: order.totalAmount,
-    }),
-  });
-}
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
@@ -65,31 +35,30 @@ export async function PATCH(
       return NextResponse.json({ error: `Estado inválido: ${status}` }, { status: 400 });
     }
 
-    if (process.env.SKIP_AUTH !== 'true') {
-      const { userId, getToken } = await auth();
-      if (!userId) {
-        return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
-      }
-
-      const authError = await authorizeStatusChange(userId, status);
-      if (authError) {
-        return NextResponse.json({ error: authError }, { status: 403 });
-      }
-
-      const currentOrderResult = await orderRepo.findById(id);
-      if (!currentOrderResult.success) {
-        return NextResponse.json({ error: currentOrderResult.error }, { status: 500 });
-      }
-      const currentOrder = currentOrderResult.data;
-      if (!currentOrder) {
-        return NextResponse.json({ error: 'Orden no encontrada' }, { status: 404 });
-      }
-
-      const transitionError = validateStatusTransition(currentOrder.status, status);
-      if (transitionError) {
-        return NextResponse.json({ error: transitionError }, { status: 422 });
-      }
+    const { userId, getToken } = await auth();
+    if (!userId) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
+
+    const authError = await authorizeStatusChange(userId, status);
+    if (authError) {
+      return NextResponse.json({ error: authError }, { status: 403 });
+    }
+
+    const currentOrderResult = await orderRepo.findById(id);
+    if (!currentOrderResult.success) {
+      return NextResponse.json({ error: currentOrderResult.error }, { status: 500 });
+    }
+    const currentOrder = currentOrderResult.data;
+    if (!currentOrder) {
+      return NextResponse.json({ error: 'Orden no encontrada' }, { status: 404 });
+    }
+
+    const transitionError = validateStatusTransition(currentOrder.status, status);
+    if (transitionError) {
+      return NextResponse.json({ error: transitionError }, { status: 422 });
+    }
+
 
 
     const updatedOrderResult = await orderRepo.updateStatus(id, status);
@@ -97,33 +66,6 @@ export async function PATCH(
       return NextResponse.json({ error: updatedOrderResult.error }, { status: 500 });
     }
     const updatedOrder = updatedOrderResult.data;
-
-    if (process.env.SKIP_AUTH !== 'true') {
-      if (status === 'DELIVERED') {
-        const { getToken } = await auth();
-        const token = await getToken();
-
-        const currentOrderResult = await orderRepo.findById(id);
-        if (!currentOrderResult.success) {
-          return NextResponse.json({ error: currentOrderResult.error }, { status: 500 });
-        }
-        const currentOrder = currentOrderResult.data;
-        if (!currentOrder) {
-          return NextResponse.json({ error: 'Orden no encontrada' }, { status: 404 });
-        }
-
-        if (token) {
-          await triggerPayouts(
-            {
-              id: currentOrder.id,
-              storeId: currentOrder.storeId,
-              totalAmount: currentOrder.totalAmount.toNumber(),
-            },
-            token,
-          );
-        }
-      }
-    }
 
     return NextResponse.json({
       id: updatedOrder.id,

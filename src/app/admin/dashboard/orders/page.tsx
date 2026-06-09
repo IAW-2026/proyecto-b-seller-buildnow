@@ -1,5 +1,3 @@
-import { requireRole } from '@/core/auth/auth';
-import { APP_ROLES } from '@/core/auth/roles';
 import { PrismaOrderRepository } from '@/infrastructure/repositories/prisma/PrismaOrderRepository';
 import { PrismaStoreRepository } from '@/infrastructure/repositories/prisma/PrismaStoreRepository';
 import { OrderStatusBadge } from '@/app/seller/dashboard/orders/OrderStatusBadge';

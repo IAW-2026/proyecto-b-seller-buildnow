@@ -8,6 +8,7 @@ import Link from 'next/link';
 import { OrderStatusBadge } from './orders/OrderStatusBadge';
 import { MetricCard } from '@/components/ui/MetricCard';
 import { ErrorBanner } from '@/components/ui/ErrorBanner';
+
 async function getEarningsFromPaymentsApi(token: string): Promise<number | null> {
   const baseUrl = process.env.PAYMENTS_API_URL;
   if (!baseUrl) return 1000;
@@ -74,9 +75,9 @@ export default async function DashboardPage() {
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
 
       {hasPartialError && (
-        <ErrorBanner 
+        <ErrorBanner
           title="Información parcial"
-          message="Algunos datos no pudieron cargarse correctamente en este momento. Estamos mostrando la información disponible." 
+          message="Algunos datos no pudieron cargarse correctamente en este momento. Estamos mostrando la información disponible."
         />
       )}
 
