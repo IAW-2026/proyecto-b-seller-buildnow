@@ -1,5 +1,5 @@
 import prisma from '../../db/prisma';
-import { IOrderRepository, CreateOrderInput, PaginatedOrders, ReadyOrderView, SellerOrderView, PaginatedAdminOrders } from '../../../core/repositories/IOrderRepository';
+import { IOrderRepository, CreateOrderInput, PaginatedOrders, ReadyOrderView, SellerOrderView, PaginatedAdminOrders, OrderTrackingDetail, BuyerOrderView } from '../../../core/repositories/IOrderRepository';
 import { Order, OrderStatus } from '@prisma/client';
 import { ActionResult } from '../../../types/action-result';
 
@@ -288,6 +288,86 @@ export class PrismaOrderRepository implements IOrderRepository {
     } catch (error) {
       console.error('[PrismaOrderRepository.updateStatus]', error);
       return { success: false, error: 'Error al actualizar el estado de la orden' };
+    }
+  }
+  async findTrackingDetails(id: string): Promise<ActionResult<OrderTrackingDetail | null>> {
+    try {
+      const order = await prisma.order.findUnique({
+        where: { id },
+        include: {
+          store: {
+            select: { name: true }
+          },
+          items: {
+            include: { product: true }
+          }
+        }
+      });
+
+      if (!order) {
+        return { success: true, data: null };
+      }
+
+      return {
+        success: true,
+        data: {
+          orderId: order.id,
+          storeName: order.store?.name || 'Desconocida',
+          itemsOrders: order.items.map(item => ({
+            id: item.id,
+            productId: item.productId,
+            productName: item.product.name,
+            quantity: item.quantity,
+            price: Number(item.price)
+          })),
+          pesoTotal: Number(order.totalWeight),
+          precioTotal: Number(order.totalAmount),
+          estadoDelPedido: order.status
+        }
+      };
+    } catch (error) {
+      console.error('[PrismaOrderRepository.findTrackingDetails]', error);
+      return { success: false, error: 'Error al obtener detalles de seguimiento' };
+    }
+  }
+
+  async findByBuyer(buyerId: string): Promise<ActionResult<BuyerOrderView[]>> {
+    try {
+      const orders = await prisma.order.findMany({
+        where: { buyerId },
+        include: {
+          store: true,
+          items: {
+            include: { product: true }
+          }
+        },
+        orderBy: { createdAt: 'desc' }
+      });
+
+      return {
+        success: true,
+        data: orders.map(order => ({
+          id: order.id,
+          buyerId: order.buyerId,
+          storeId: order.storeId,
+          storeName: order.store?.name || 'Desconocida',
+          totalAmount: Number(order.totalAmount),
+          totalWeight: Number(order.totalWeight),
+          status: order.status,
+          deliveryAddress: order.deliveryAddress,
+          items: order.items.map(item => ({
+            id: item.id,
+            productId: item.productId,
+            productName: item.product.name,
+            quantity: item.quantity,
+            price: Number(item.price)
+          })),
+          createdAt: order.createdAt.toISOString()
+        }))
+      };
+    } catch (error) {
+      console.error('[PrismaOrderRepository.findByBuyer]', error);
+      return { success: false, error: 'Error al obtener las órdenes del comprador' };
     }
   }
 }

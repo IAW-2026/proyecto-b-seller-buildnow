@@ -4,6 +4,7 @@ import { PrismaOrderRepository } from '../../../infrastructure/repositories/pris
 import { PrismaProductRepository } from '../../../infrastructure/repositories/prisma/PrismaProductRepository';
 import { requireRole } from '@/core/auth/auth';
 import { APP_ROLES } from '@/core/auth/roles';
+import { auth } from '@clerk/nextjs/server';
 
 const orderRepo = new PrismaOrderRepository();
 const productRepo = new PrismaProductRepository();
@@ -13,23 +14,52 @@ type ItemInput = { productId: string; quantity: number };
 
 export async function GET(request: NextRequest) {
   try {
-    await requireRole([APP_ROLES.DELIVERY]);
+    const { sessionClaims } = await auth();
+    const role = sessionClaims?.metadata?.role as string;
 
-    const status = request.nextUrl.searchParams.get('status');
-
-    if (status === 'READY') {
-      const result = await orderRepo.findReadyOrders();
-      if (!result.success) {
-        return NextResponse.json({ error: result.error }, { status: 500 });
-      }
-      return NextResponse.json(result.data);
+    if (!role || (role !== APP_ROLES.BUYER && role !== APP_ROLES.DELIVERY)) {
+      return NextResponse.json({ error: 'Tu rol no tiene permisos para realizar esta acción' }, { status: 403 });
     }
 
-    return NextResponse.json({ error: 'Parámetro status requerido' }, { status: 400 });
+    if (role === APP_ROLES.BUYER) {
+      return await manejoBuyer(request);
+    }
+
+    if (role === APP_ROLES.DELIVERY) {
+      return await manejoDelivery(request);
+    }
   } catch (error) {
     console.error('Error obteniendo órdenes:', error);
     return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });
   }
+}
+
+async function manejoBuyer(request: NextRequest) {
+  const buyerId = request.nextUrl.searchParams.get('buyerId');
+
+  if (!buyerId) {
+    return NextResponse.json({ error: 'Parámetro buyerId requerido' }, { status: 400 });
+  }
+
+  const result = await orderRepo.findByBuyer(buyerId);
+  if (!result.success) {
+    return NextResponse.json({ error: result.error }, { status: 500 });
+  }
+  return NextResponse.json(result.data);
+}
+
+async function manejoDelivery(request: NextRequest) {
+  const status = request.nextUrl.searchParams.get('status');
+
+  if (status === 'READY') {
+    const result = await orderRepo.findReadyOrders();
+    if (!result.success) {
+      return NextResponse.json({ error: result.error }, { status: 500 });
+    }
+    return NextResponse.json(result.data);
+  }
+
+  return NextResponse.json({ error: 'Parámetro status requerido' }, { status: 400 });
 }
 
 

@@ -1,6 +1,19 @@
 import { Order, OrderStatus } from '@prisma/client';
 import { ActionResult } from '../../types/action-result';
 
+export type BuyerOrderView = {
+  id: string;
+  buyerId: string;
+  storeId: string;
+  storeName: string;
+  totalAmount: number;
+  totalWeight: number;
+  status: OrderStatus;
+  deliveryAddress: string;
+  items: OrderItemDetail[];
+  createdAt: string;
+};
+
 export type CreateOrderInput = {
   buyerId: string;
   storeId: string;
@@ -60,6 +73,16 @@ export type PaginatedAdminOrders = {
   totalPages: number;
 };
 
+export type OrderTrackingDetail = {
+  orderId: string;
+  storeName: string;
+  itemsOrders: OrderItemDetail[];
+  pesoTotal: number;
+  precioTotal: number;
+  estadoDelPedido: OrderStatus;
+};
+
+
 export interface IOrderRepository {
   findAll(page?: number, pageSize?: number, storeId?: string): Promise<ActionResult<PaginatedAdminOrders>>;
   countAll(): Promise<ActionResult<number>>;
@@ -69,4 +92,6 @@ export interface IOrderRepository {
   findReadyOrders(): Promise<ActionResult<ReadyOrderView[]>>;
   createWithItemsAndUpdateStock(data: CreateOrderInput): Promise<ActionResult<Order>>;
   updateStatus(id: string, status: OrderStatus): Promise<ActionResult<Order>>;
+  findTrackingDetails(id: string): Promise<ActionResult<OrderTrackingDetail | null>>;
+  findByBuyer(buyerId: string): Promise<ActionResult<BuyerOrderView[]>>;
 }

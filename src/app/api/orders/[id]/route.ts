@@ -19,6 +19,30 @@ const ROLE_ALLOWED_STATUSES: Record<string, string[]> = {
   [APP_ROLES.SELLER]: ['READY', 'CANCELLED'],
 };
 
+export async function GET(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  try {
+    const { id } = await params;
+    
+    const result = await orderRepo.findTrackingDetails(id);
+    
+    if (!result.success) {
+      return NextResponse.json({ error: result.error }, { status: 500 });
+    }
+    
+    if (!result.data) {
+      return NextResponse.json({ error: 'Orden no encontrada' }, { status: 404 });
+    }
+    
+    return NextResponse.json(result.data);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Error desconocido';
+    console.error('Error obteniendo detalle de orden:', error);
+    return NextResponse.json({ error: 'Error interno del servidor', message }, { status: 500 });
+  }
+}
 
 export async function PATCH(
   request: Request,
@@ -35,14 +59,27 @@ export async function PATCH(
       return NextResponse.json({ error: `Estado inválido: ${status}` }, { status: 400 });
     }
 
-    const { userId, getToken } = await auth();
-    if (!userId) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
-    }
+    const apiKey = request.headers.get('x-internal-api-key');
 
-    const authError = await authorizeStatusChange(userId, status);
-    if (authError) {
-      return NextResponse.json({ error: authError }, { status: 403 });
+    if (apiKey) {
+      if (apiKey !== process.env.PAYMENTS_API_KEY) {
+        return NextResponse.json({ error: 'API Key inválida' }, { status: 401 });
+      }
+
+      const allowedStatuses = ROLE_ALLOWED_STATUSES[APP_ROLES.PAYMENTS];
+      if (!allowedStatuses.includes(status)) {
+        return NextResponse.json({ error: `Payments no tiene permisos para cambiar el estado a ${status}` }, { status: 403 });
+      }
+    } else {
+      const { userId, getToken } = await auth();
+      if (!userId) {
+        return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+      }
+
+      const authError = await authorizeStatusChange(userId, status);
+      if (authError) {
+        return NextResponse.json({ error: authError }, { status: 403 });
+      }
     }
 
     const currentOrderResult = await orderRepo.findById(id);
@@ -58,8 +95,6 @@ export async function PATCH(
     if (transitionError) {
       return NextResponse.json({ error: transitionError }, { status: 422 });
     }
-
-
 
     const updatedOrderResult = await orderRepo.updateStatus(id, status);
     if (!updatedOrderResult.success) {

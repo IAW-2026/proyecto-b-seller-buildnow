@@ -20,16 +20,14 @@ async function requestPayout(orderId: string, recipientId: string, amount: numbe
   const apiUrl = process.env.PAYMENTS_API_URL || 'http://localhost:3000';
 
   const response = await fetch(`${apiUrl}/api/payments/payouts`, {
-    method: 'POST',
+    method: 'PATCH',
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify({
       orderId,
-      recipientId,
       recipientType: 'SELLER',
-      amount,
     }),
   });
 
@@ -76,13 +74,11 @@ export async function updateOrderStatusAction(orderId: string, newStatus: OrderS
     return { success: false, error: updateResult.error };
   }
 
-  // TODO: Habilitar cuando se integre con la API de payments
-  // try {
-  //   await requestPayout(order.id, seller.storeId!, Number(order.totalAmount));
-  // } catch (error) {
-  //   console.error('Error requesting payout:', error);
-  //   // Manejar el error o dejar que falle la action si es bloqueante
-  // }
+  try {
+    await requestPayout(order.id, seller.storeId!, Number(order.totalAmount));
+  } catch (error) {
+    console.error('Error requesting payout:', error);
+  }
 
   revalidatePath('/seller/dashboard/orders');
   revalidatePath('/seller/dashboard');
