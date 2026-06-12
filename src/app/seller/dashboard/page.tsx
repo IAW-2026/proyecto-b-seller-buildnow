@@ -14,7 +14,7 @@ async function getEarningsFromPaymentsApi(token: string): Promise<number | null>
   if (!baseUrl) return 1000;
 
   try {
-    const res = await fetch(`${baseUrl}/api/payments/earnings?recipientType=SELLER`, {
+    const res = await fetch(`${baseUrl}/api/payments/earnings?recipientType=seller`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },

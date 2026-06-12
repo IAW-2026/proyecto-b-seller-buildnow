@@ -13,7 +13,7 @@ const SELLER_TRANSITIONS: Record<string, OrderStatus[]> = {
   CONFIRMED: [OrderStatus.READY],
 };
 
-async function requestPayout(orderId: string, recipientId: string, amount: number) {
+async function requestPayout(orderId: string) {
   const { getToken } = await auth();
   const token = await getToken();
 
@@ -27,7 +27,7 @@ async function requestPayout(orderId: string, recipientId: string, amount: numbe
     },
     body: JSON.stringify({
       orderId,
-      recipientType: 'SELLER',
+      recipientType: 'seller',
     }),
   });
 
@@ -75,7 +75,7 @@ export async function updateOrderStatusAction(orderId: string, newStatus: OrderS
   }
 
   try {
-    await requestPayout(order.id, seller.storeId!, Number(order.totalAmount));
+    await requestPayout(order.id);
   } catch (error) {
     console.error('Error requesting payout:', error);
   }

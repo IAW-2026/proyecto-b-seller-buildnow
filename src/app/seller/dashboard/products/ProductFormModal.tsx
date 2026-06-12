@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { Modal } from '@/components/ui/Modal';
 import { Category } from '@prisma/client';
 import { SerializedProduct } from './ProductsClient';
@@ -21,6 +22,36 @@ export function ProductFormModal({
   categories,
   isLoading,
 }: ProductFormModalProps) {
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      setImagePreview(editingProduct?.img || null);
+    } else {
+      if (imagePreview && imagePreview.startsWith('blob:')) {
+        URL.revokeObjectURL(imagePreview);
+      }
+      setImagePreview(null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, editingProduct]);
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (imagePreview && imagePreview.startsWith('blob:')) {
+        URL.revokeObjectURL(imagePreview);
+      }
+      const url = URL.createObjectURL(file);
+      setImagePreview(url);
+    } else {
+      if (imagePreview && imagePreview.startsWith('blob:')) {
+        URL.revokeObjectURL(imagePreview);
+      }
+      setImagePreview(editingProduct?.img || null);
+    }
+  };
+
   return (
     <Modal
       isOpen={isOpen}
@@ -43,17 +74,32 @@ export function ProductFormModal({
 
         <div>
           <label className="block text-sm font-medium text-zinc-700 mb-1">Imagen (Opcional)</label>
-          <input
-            type="file"
-            name="image"
-            accept="image/*"
-            className="w-full bg-white border border-zinc-200 rounded-lg px-4 py-2 text-zinc-900 focus:outline-none focus:border-orange-500 transition-colors file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-600 hover:file:bg-orange-100"
-          />
-          {editingProduct?.img && (
-            <p className="text-xs text-zinc-500 mt-2">
-              El producto ya tiene una imagen asociada. Subir una nueva la reemplazará.
-            </p>
-          )}
+          <div className="flex items-center gap-4">
+            {imagePreview && (
+              <div className="relative w-16 h-16 rounded-lg overflow-hidden border border-zinc-200 shrink-0 bg-zinc-50">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img 
+                  src={imagePreview} 
+                  alt="Vista previa" 
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            )}
+            <div className="flex-1 min-w-0">
+              <input
+                type="file"
+                name="image"
+                accept="image/*"
+                onChange={handleImageChange}
+                className="w-full bg-white border border-zinc-200 rounded-lg px-4 py-2 text-zinc-900 focus:outline-none focus:border-orange-500 transition-colors file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-600 hover:file:bg-orange-100"
+              />
+              {editingProduct?.img && (
+                <p className="text-xs text-zinc-500 mt-2">
+                  El producto ya tiene una imagen asociada. Subir una nueva la reemplazará.
+                </p>
+              )}
+            </div>
+          </div>
         </div>
 
         <div>
