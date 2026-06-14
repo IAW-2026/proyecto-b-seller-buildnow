@@ -322,7 +322,8 @@ export class PrismaOrderRepository implements IOrderRepository {
           })),
           pesoTotal: Number(order.totalWeight),
           precioTotal: Number(order.totalAmount),
-          estadoDelPedido: order.status
+          estadoDelPedido: order.status,
+          createdAt: order.createdAt.toISOString()
         }
       };
     } catch (error) {

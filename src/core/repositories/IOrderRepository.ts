@@ -80,6 +80,7 @@ export type OrderTrackingDetail = {
   pesoTotal: number;
   precioTotal: number;
   estadoDelPedido: OrderStatus;
+  createdAt: string;
 };
 
 

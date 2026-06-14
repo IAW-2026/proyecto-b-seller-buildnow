@@ -106,6 +106,7 @@ export async function PATCH(
       id: updatedOrder.id,
       status: updatedOrder.status,
       updatedAt: updatedOrder.updatedAt.toISOString(),
+      createdAt: updatedOrder.createdAt.toISOString(),
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Error desconocido';
