@@ -53,23 +53,6 @@ export async function GET(request: NextRequest) {
     const currentRev = Number(currentRevenue._sum.totalAmount ?? 0);
     const previousRev = Number(previousRevenue._sum.totalAmount ?? 0);
 
-    const ordersTrend =
-      previousOrders > 0
-        ? Math.round(((currentOrders - previousOrders) / previousOrders) * 100)
-        : currentOrders > 0
-          ? currentOrders
-          : 0;
-
-
-
-    const revenueTrend =
-      previousRev > 0
-        ? Math.round(((currentRev - previousRev) / previousRev) * 100)
-        : currentRev > 0
-          ? currentRev
-          : 0;
-
-    console.log(previousRev);
 
     return NextResponse.json({
       activeStores: {
@@ -78,13 +61,11 @@ export async function GET(request: NextRequest) {
       },
       totalOrders: {
         current: currentOrders,
-        previous: previousOrders,
-        trend: ordersTrend,
+        previous: previousOrders
       },
       platformRevenue: {
         current: currentRev,
-        previous: previousRev,
-        trend: revenueTrend,
+        previous: previousRev
       },
       registeredSellers: {
         current: totalSellers,
