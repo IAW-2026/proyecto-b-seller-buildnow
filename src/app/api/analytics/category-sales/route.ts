@@ -2,12 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { APP_ROLES } from '@/core/auth/roles';
 import prisma from '@/infrastructure/db/prisma';
-
-function getPeriodFrom(period: string | null): Date {
-  const daysMap: Record<string, number> = { '7d': 7, '30d': 30, '90d': 90 };
-  const days = daysMap[period ?? '7d'] ?? 7;
-  return new Date(Date.now() - days * 24 * 60 * 60 * 1000);
-}
+import { getPeriodFrom } from '../utils';
 
 export async function GET(request: NextRequest) {
   try {
