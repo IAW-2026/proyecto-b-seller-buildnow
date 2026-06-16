@@ -56,12 +56,20 @@ export async function GET(request: NextRequest) {
     const ordersTrend =
       previousOrders > 0
         ? Math.round(((currentOrders - previousOrders) / previousOrders) * 100)
-        : 0;
+        : currentOrders > 0
+          ? currentOrders
+          : 0;
+
+
 
     const revenueTrend =
       previousRev > 0
         ? Math.round(((currentRev - previousRev) / previousRev) * 100)
-        : 0;
+        : currentRev > 0
+          ? currentRev
+          : 0;
+
+    console.log(previousRev);
 
     return NextResponse.json({
       activeStores: {
