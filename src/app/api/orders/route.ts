@@ -170,3 +170,31 @@ export async function POST(request: NextRequest) {
     }, { status: 500 });
   }
 }
+
+export async function PATCH(request: NextRequest) {
+  try {
+    const authResult = await requireRole([APP_ROLES.ADMIN]);
+    if (!authResult.success) {
+      return NextResponse.json({ error: authResult.error }, { status: 403 });
+    }
+
+    const body = await request.json();
+    const { id, status } = body;
+
+    if (!id || !status) {
+      return NextResponse.json({ error: 'Faltan campos obligatorios: id y status' }, { status: 400 });
+    }
+
+    const result = await orderRepo.updateStatus(id, status);
+
+    if (!result.success) {
+      return NextResponse.json({ error: result.error }, { status: 500 });
+    }
+
+    return NextResponse.json(result.data, { status: 200 });
+
+  } catch (error) {
+    console.error('Error actualizando orden:', error);
+    return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });
+  }
+}
