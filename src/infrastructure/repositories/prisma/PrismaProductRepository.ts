@@ -1,6 +1,6 @@
 import prisma from '../../db/prisma';
 import { IProductRepository, ProductWithCategory, SearchProductsOptions, SearchStoreProductsOptions, PaginatedProducts } from '../../../core/repositories/IProductRepository';
-import { Product, Prisma } from '@prisma/client';
+import { Product, Prisma, StoreStatus } from '@prisma/client';
 import { ActionResult } from '../../../types/action-result';
 
 export class PrismaProductRepository implements IProductRepository {
@@ -87,17 +87,23 @@ export class PrismaProductRepository implements IProductRepository {
       const skip = (pageNumber - 1) * pageSize;
       const take = pageSize;
 
-      let where: Prisma.ProductWhereInput = {};
+      // Excluir siempre productos de tiendas suspendidas
+      const storeNotSuspended: Prisma.ProductWhereInput = {
+        store: { status: { not: StoreStatus.SUSPENDED } }
+      };
+
+      let where: Prisma.ProductWhereInput = { ...storeNotSuspended };
 
       if (categoryId && search) {
         where = {
+          ...storeNotSuspended,
           categoryId,
           name: { contains: search, mode: 'insensitive' }
         };
       } else if (categoryId) {
-        where = { categoryId };
+        where = { ...storeNotSuspended, categoryId };
       } else if (search) {
-        where = { name: { contains: search, mode: 'insensitive' } };
+        where = { ...storeNotSuspended, name: { contains: search, mode: 'insensitive' } };
       }
 
       const [total, products] = await Promise.all([
