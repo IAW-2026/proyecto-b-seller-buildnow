@@ -7,7 +7,7 @@ const storeRepo = new PrismaStoreRepository();
 
 export async function PATCH(
     request: NextRequest,
-    { params }: { params: { storeId: string } }
+    { params }: { params: Promise<{ storeId: string }> }
 ) {
     try {
         const authResult = await requireRole([APP_ROLES.ADMIN]);
@@ -19,7 +19,10 @@ export async function PATCH(
         if (!status) {
             return NextResponse.json({ error: 'Falta campo obligatorio: status' }, { status: 400 });
         }
-        const { storeId } = params;
+        const { storeId } = await params;
+        if (!storeId) {
+            return NextResponse.json({ error: 'Falta parametro obligatorio: storeId' }, { status: 400 });
+        }
         const result = await storeRepo.update(storeId, { status });
         if (!result.success) {
             return NextResponse.json({ error: result.error }, { status: 500 });
