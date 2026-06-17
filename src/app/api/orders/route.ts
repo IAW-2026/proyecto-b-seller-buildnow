@@ -1,13 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { Product } from '@prisma/client';
+import { Product, StoreStatus } from '@prisma/client';
 import { PrismaOrderRepository } from '../../../infrastructure/repositories/prisma/PrismaOrderRepository';
 import { PrismaProductRepository } from '../../../infrastructure/repositories/prisma/PrismaProductRepository';
+import { PrismaStoreRepository } from '../../../infrastructure/repositories/prisma/PrismaStoreRepository';
 import { requireRole } from '@/core/auth/auth';
 import { APP_ROLES } from '@/core/auth/roles';
 import { auth } from '@clerk/nextjs/server';
 
 const orderRepo = new PrismaOrderRepository();
 const productRepo = new PrismaProductRepository();
+const storeRepo = new PrismaStoreRepository();
 
 type ItemInput = { productId: string; quantity: number };
 
@@ -96,6 +98,23 @@ function calcularTotalesYArmarItems(items: ItemInput[], productsMap: Map<string,
   return { totalAmount, totalWeight, orderItems };
 }
 
+async function verificarTienda(storeId: string) {
+  const storeResult = await storeRepo.findById(storeId);
+  if (!storeResult.success) {
+    return NextResponse.json({ error: 'Error al verificar la tienda' }, { status: 500 });
+  }
+  if (!storeResult.data) {
+    return NextResponse.json({ error: 'Tienda no encontrada' }, { status: 404 });
+  }
+  if (storeResult.data.status === StoreStatus.SUSPENDED) {
+    return NextResponse.json(
+      { error: 'Tienda suspendida, no se pueden crear ordenes con esta tienda' },
+      { status: 403 }
+    );
+  }
+  return null;
+}
+
 export async function POST(request: NextRequest) {
   try {
     await requireRole([APP_ROLES.BUYER]);
@@ -106,6 +125,9 @@ export async function POST(request: NextRequest) {
     if (!buyerId || !storeId || !deliveryAddress || !items || items.length === 0) {
       return NextResponse.json({ error: 'Faltan campos obligatorios' }, { status: 400 });
     }
+
+    const errorResponse = await verificarTienda(storeId);
+    if (errorResponse) return errorResponse;
 
     const productIds = items.map((item: ItemInput) => item.productId);
     const productsResult = await productRepo.findManyByIds(productIds);
