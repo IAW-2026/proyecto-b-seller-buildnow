@@ -3,6 +3,7 @@ import { ActionResult } from '../../types/action-result';
 
 export type ProductWithCategory = Product & {
   categoryName: string;
+  storeName?: string;
 };
 
 export interface SearchProductsOptions {
@@ -14,6 +15,13 @@ export interface SearchProductsOptions {
 
 export interface SearchStoreProductsOptions extends SearchProductsOptions {
   storeId: string;
+}
+
+export interface SearchAdminProductsOptions {
+  storeId?: string;
+  categoryId?: string;
+  pageNumber: number;
+  pageSize: number;
 }
 
 export interface PaginatedProducts {
@@ -32,6 +40,7 @@ export interface IProductRepository {
   countAll(): Promise<ActionResult<number>>;
   findPaginated(options: SearchProductsOptions): Promise<ActionResult<PaginatedProducts>>;
   findPaginatedByStore(options: SearchStoreProductsOptions): Promise<ActionResult<PaginatedProducts>>;
+  findPaginatedForAdmin(options: SearchAdminProductsOptions): Promise<ActionResult<PaginatedProducts>>;
   findManyByIds(ids: string[]): Promise<ActionResult<Product[]>>;
   create(data: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>): Promise<ActionResult<Product>>;
   update(id: string, data: Partial<Product>): Promise<ActionResult<Product>>;

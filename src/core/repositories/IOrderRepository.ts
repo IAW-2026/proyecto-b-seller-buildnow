@@ -85,7 +85,7 @@ export type OrderTrackingDetail = {
 
 
 export interface IOrderRepository {
-  findAll(page?: number, pageSize?: number, storeId?: string): Promise<ActionResult<PaginatedAdminOrders>>;
+  findAll(page?: number, pageSize?: number, storeId?: string, status?: string): Promise<ActionResult<PaginatedAdminOrders>>;
   countAll(): Promise<ActionResult<number>>;
   findById(id: string): Promise<ActionResult<Order | null>>;
   findByStore(storeId: string, page?: number, pageSize?: number, status?: string): Promise<ActionResult<PaginatedOrders>>;

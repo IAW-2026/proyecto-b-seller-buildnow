@@ -6,10 +6,13 @@ import { ActionResult } from '../../../types/action-result';
 const MINUTOS_TO_WAIT_BEFORE_DELETE = 20;
 
 export class PrismaOrderRepository implements IOrderRepository {
-  async findAll(page = 1, pageSize = 10, storeId?: string): Promise<ActionResult<PaginatedAdminOrders>> {
+  async findAll(page = 1, pageSize = 10, storeId?: string, status?: string): Promise<ActionResult<PaginatedAdminOrders>> {
     try {
       const skip = (page - 1) * pageSize;
-      const where = storeId ? { storeId } : {};
+      const where = {
+        ...(storeId ? { storeId } : {}),
+        ...(status && status !== 'ALL' ? { status: status as OrderStatus } : {}),
+      };
 
       const [orders, total] = await Promise.all([
         prisma.order.findMany({

@@ -1,5 +1,5 @@
 import prisma from '../../db/prisma';
-import { IProductRepository, ProductWithCategory, SearchProductsOptions, SearchStoreProductsOptions, PaginatedProducts } from '../../../core/repositories/IProductRepository';
+import { IProductRepository, ProductWithCategory, SearchProductsOptions, SearchStoreProductsOptions, SearchAdminProductsOptions, PaginatedProducts } from '../../../core/repositories/IProductRepository';
 import { Product, Prisma, StoreStatus } from '@prisma/client';
 import { ActionResult } from '../../../types/action-result';
 
@@ -234,4 +234,49 @@ export class PrismaProductRepository implements IProductRepository {
       return { success: false, error: 'Error al eliminar el producto' };
     }
   }
+
+  async findPaginatedForAdmin(options: SearchAdminProductsOptions): Promise<ActionResult<PaginatedProducts>> {
+    try {
+      const { storeId, categoryId, pageNumber, pageSize } = options;
+      const skip = (pageNumber - 1) * pageSize;
+      const take = pageSize;
+
+      // Sin restricción de tiendas suspendidas: el admin ve todos los productos
+      const where: Prisma.ProductWhereInput = {};
+      if (storeId)    where.storeId    = storeId;
+      if (categoryId) where.categoryId = categoryId;
+
+      const [total, products] = await Promise.all([
+        prisma.product.count({ where }),
+        prisma.product.findMany({
+          where,
+          skip,
+          take,
+          include: { category: true, store: true },
+          orderBy: { createdAt: 'desc' }
+        })
+      ]);
+
+      const data = products.map(p => ({
+        ...p,
+        categoryName: p.category.name,
+        storeName: p.store.name,
+      }));
+
+      return {
+        success: true,
+        data: {
+          data,
+          total,
+          page: pageNumber,
+          pageSize,
+          totalPages: Math.ceil(total / pageSize)
+        }
+      };
+    } catch (error) {
+      console.error('[PrismaProductRepository.findPaginatedForAdmin]', error);
+      return { success: false, error: 'Error al buscar productos para el admin' };
+    }
+  }
 }
+
