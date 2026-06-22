@@ -17,7 +17,7 @@ function buildTimeseries(
   const map = new Map<string, TimeseriesEntry>();
 
   // Pre-populate all buckets so missing days show as 0
-  for (let i = 0; i < days; i++) {
+  for (let i = 1; i <= days; i++) {
     const d = new Date(from.getTime() + i * 24 * 60 * 60 * 1000);
     const key = getKey(d, period);
     if (!map.has(key)) {
@@ -33,6 +33,8 @@ function buildTimeseries(
       entry.orders += 1;
     }
   }
+
+  console.log(Array.from(map.values()));
 
   return Array.from(map.values());
 }
@@ -71,10 +73,14 @@ export async function GET(request: NextRequest) {
     const from = getPeriodFrom(period);
 
     const orders = await prisma.order.findMany({
-      where: { createdAt: { gte: from } },
+      where: {
+        createdAt: { gte: from },
+        status: { in: ['READY', 'ON_THE_WAY', 'DELIVERED'] },
+      },
       select: { createdAt: true, totalAmount: true },
       orderBy: { createdAt: 'asc' },
     });
+
 
     const data = buildTimeseries(orders, period, from);
 
